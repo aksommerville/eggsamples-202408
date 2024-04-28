@@ -1,34 +1,39 @@
 import { TileRenderer } from "./TileRenderer";
-import {
-  InputManager,
-  InputManagerPlayerEvent,
-  InputManagerButton,
-  InputManagerEvent,
-} from "./InputManager";
+import { Bus } from "./input/Bus";
 
 let tileRenderer: TileRenderer;
-let inputManager: InputManager;
+let bus: Bus;
 let texid_font = 0;
 let texid_cursor = 0;
+let texid_bg = 0;
+let texid_joystick = 0;
 let textEntry = "";
-let mousex = -1, mousey = -1;
+let joyState = 0;
 let screenw = 0, screenh = 0;
+let joyp = 0;
 
-const buttons: {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  label: string;
-  cb: () => void;
-}[] = [
-  { x:40, y:40, w:100, h:16, label:"Text", cb: onClickText },
-  { x:40, y:60, w:100, h:16, label:"Joystick", cb: onClickJoystick },
-  { x:40, y:80, w:100, h:16, label:"Config", cb: onClickConfig },
+const joystickButtonLocations = [
+  [6, 30, 15, 14],
+  [33, 30, 15, 14],
+  [20, 16, 14, 15],
+  [20, 43, 14, 15],
+  [94, 44, 14, 14],
+  [80, 30, 14, 14],
+  [108, 30, 14, 14],
+  [94, 16, 14, 14],
+  [19, 6, 27, 5],
+  [82, 6, 27, 5],
+  [10, 5, 9, 6],
+  [109, 5, 9, 6],
+  [53, 51, 22, 7],
+  [53, 41, 22, 7],
+  [53, 31, 22, 7],
+  [58, 17, 12, 9],
 ];
 
 function egg_client_init(): number {
   tileRenderer = new TileRenderer();
+  bus = new Bus();
   
   const fb = egg.texture_get_header(1);
   screenw = fb.w;
@@ -36,167 +41,107 @@ function egg_client_init(): number {
   
   if (egg.texture_load_image(texid_font = egg.texture_new(), 0, 1) < 0) return -1;
   if (egg.texture_load_image(texid_cursor = egg.texture_new(), 0, 2) < 0) return -1;
+  if (egg.texture_load_image(texid_bg = egg.texture_new(), 0, 3) < 0) return -1;
+  if (egg.texture_load_image(texid_joystick = egg.texture_new(), 0, 4) < 0) return -1;
   const cursor = egg.texture_get_header(texid_cursor);
   
-  inputManager = new InputManager(texid_font, {
-    texid: texid_cursor,
-    x: 0, y: 0, w: cursor.w, h: cursor.h,
-    hotX: 4,
-    hotY: 1,
-  });
-  inputManager.pushMode("pointer");
-  const inputListener = inputManager.listen(0xffffffff, e => onEvent(e));
-  inputManager.listen("text", e => onText((e as any).codepoint));
-  inputManager.listenPlayer(0, e => onPlayerEvent(e));
+  bus.setFont(texid_font);
+  bus.setCursor(texid_cursor, 16, 0, 16, 16, 8, 8);
+  bus.setButtonNames(
+    //["Left", "Right", "Up", "Down", "South", "West", "East", "North", "L1", "R1", "L2", "R2", "Aux1", "Aux2", "Aux3"],
+    //["South", "East", "West", "North", "L1", "R1", "L2", "R2", "Aux2", "Aux1", "LP", "RP", "Up", "Down", "Left", "Right", "Aux3"]
+    // A more realistic game would assign meaningful labels. (hint: Use string resources so they can translate).
+    ["Left", "Right", "Up", "Down", "Jump", "Attack", "Dash", "Pause"],
+    ["Jump", "Dash", "Attack", "", "", "", "", "", "", "Pause", "", "", "Up", "Down", "Left", "Right", ""]
+  );
+  //bus.joyQuery.setPrompts(["The hell? I said '%'.", "przzzz % if you dare", "again, %s"]);
   
-  /* ok
-  inputManager.http("GET", "http://localhost:8080/list-games").then(rsp => {
-    egg.log(`list-games: ${rsp}`);
-  }).catch(error => {
-    egg.log(`list-games failed: ${error}`);
-  });
+  bus.listen("all", event => onEvent(event));
+  bus.joyLogical.listen((p, b, v, s) => onPlayerEvent(p, b, v, s));
   
-  inputManager.websocketListen("ws://localhost:8080/ws", msg => {
-    if (typeof(msg) === "number") {
-      egg.log(`websocket ${msg ? "connected" : "disconnected"}`);
-    } else {
-      egg.log(`via websocket: ${JSON.stringify(msg)}`);
-    }
-  });
-  /**/
+  // Select an input mode:
+  //if (bus.requireJoysticks()) egg.log("Listening for mapped joystick events."); else egg.log("Bus.requireJoysticks failed!");
+  //if (bus.requireText()) egg.log("Listening for text."); else egg.log("Bus.requireText failed!");
+  if (bus.requirePointer()) egg.log("Listening for pointer."); else egg.log("Bus.requirePointer failed!");
   
   return 0;
 }
 
-function onEvent(event: InputManagerEvent): void {
-  //egg.log(`index.ts receiving event: ${JSON.stringify(event)}`);
-  switch (event.type) {
-    case egg.EventType.MMOTION: mousex = event.x; mousey = event.y; break;
-    case egg.EventType.MBUTTON: if ((event.btnid === 1) && event.value) {
-        for (const button of buttons) {
-          if (event.x < button.x) continue;
-          if (event.y < button.y) continue;
-          if (event.x >= button.x + button.w) continue;
-          if (event.y >= button.y + button.h) continue;
-          button.cb();
-          break;
+function onEvent(event: egg.Event): void {
+  //egg.log(`index.ts:onEvent: ${JSON.stringify(event)}`);
+  switch (event.eventType) {
+  
+    case egg.EventType.CONNECT: {
+        //inputProxy.joyShaper.configureDevice(event.v0);
+      } break;
+  
+    case egg.EventType.TEXT: {
+        if (event.v0 === 0x0a) {
+          egg.log(`Text entry complete: ${JSON.stringify(textEntry)}`);
+          textEntry = "";
+        } else if (event.v0 === 0x08) {
+          if (textEntry.length > 0) textEntry = textEntry.substring(0, textEntry.length - 1);
+        } else if (event.v0 < 0x20) {
+          // Ignore C0, eg ESC.
+        } else {
+          textEntry += String.fromCharCode(event.v0);
         }
       } break;
-    case egg.EventType.KEY: if (event.value) switch (event.keycode) {
-        case 0x00070029: {
-            const mode = inputManager.getMode();
-            if (mode === "pointer") egg.request_termination();
-            else inputManager.popMode(mode);
-          } break;
+      
+    case egg.EventType.MBUTTON: {
+        if (event.v0 === 1) {
+          if (event.v1) bus.setCursor(texid_cursor, 32, 0, 16, 16, 8, 8);
+          else bus.setCursor(texid_cursor, 16, 0, 16, 16, 8, 8);
+        }
       } break;
   }
 }
 
-function onText(codepoint: number): void {
-  if (codepoint === 0x08) {
-    if (textEntry.length > 0) {
-      textEntry = textEntry.substring(0, textEntry.length - 1);
+function onPlayerEvent(playerid: number, btnid: number, value: number, state: number): void {
+  //egg.log(`index.ts:onPlayerEvent: ${playerid}.${btnid}=${value} [${state}]`);
+  if (!playerid) {
+    joyState = state;
+    if (value) switch (btnid) {
+      case 0x0004: if (--joyp < 0) joyp = bus.joyTwoState.devices.length - 1; break;
+      case 0x0008: if (++joyp >= bus.joyTwoState.devices.length) joyp = 0; break;
+      case 0x0010: bus.beginJoyQuery(bus.joyTwoState.devices[joyp]?.devid || 0); break;
     }
-  } else if (codepoint === 0x0a) {
-    egg.log(`You entered ${JSON.stringify(textEntry)}.`);
-    textEntry = "";
-  } else if (textEntry.length < 32) {
-    textEntry += String.fromCharCode(codepoint);
   }
-}
-
-function onPlayerEvent(event: InputManagerPlayerEvent): void {
-  return;
-  let msg = `PLAYER ${event.playerid}:`;
-  if (event.state & InputManagerButton.LEFT) msg += " LEFT";
-  if (event.state & InputManagerButton.RIGHT) msg += " RIGHT";
-  if (event.state & InputManagerButton.UP) msg += " UP";
-  if (event.state & InputManagerButton.DOWN) msg += " DOWN";
-  if (event.state & InputManagerButton.SOUTH) msg += " SOUTH";
-  if (event.state & InputManagerButton.WEST) msg += " WEST";
-  if (event.state & InputManagerButton.EAST) msg += " EAST";
-  if (event.state & InputManagerButton.NORTH) msg += " NORTH";
-  if (event.state & InputManagerButton.L1) msg += " L1";
-  if (event.state & InputManagerButton.R1) msg += " R1";
-  if (event.state & InputManagerButton.L2) msg += " L2";
-  if (event.state & InputManagerButton.R2) msg += " R2";
-  if (event.state & InputManagerButton.AUX1) msg += " AUX1";
-  if (event.state & InputManagerButton.AUX2) msg += " AUX2";
-  if (event.state & InputManagerButton.AUX3) msg += " AUX3";
-  if (event.state & InputManagerButton.CD) msg += " CD";
-  egg.log(msg);
-}
-
-function onClickText(): void {
-  inputManager.pushMode("text");
-}
-
-function onClickJoystick(): void {
-  inputManager.pushMode("joystick");
-}
-
-function onClickConfig(): void {
-  inputManager.configureJoystick([
-    "Left", "Right", "Up", "Down",
-    "South", "West", "East", "North",
-    "L1", "R1", "L2", "R2",
-    "Aux1", "Aux2", "Aux3",
-  ]);
 }
 
 function egg_client_update(elapsed: number): void {
-  if (inputManager.update(elapsed)) return;
+  bus.update(elapsed);
 }
 
 function egg_client_render(): void {
-
-  egg.draw_rect(1, 0, 0, screenw, screenh, 0x804000ff);
+  //egg.draw_rect(1, 0, 0, screenw, screenh, 0x104060ff);
+  egg.draw_decal(1, texid_bg, 0, 0, 0, 0, screenw, screenh, 0);
   
-  switch (inputManager.getMode()) {
-
-    case "text": {
-        tileRenderer.begin(texid_font, 0xffffffff, 0xff);
-        tileRenderer.string(24, 20, textEntry);
-        tileRenderer.end();
-      } break;
-  
-    case "pointer": {
-        for (const button of buttons) {
-          egg.draw_rect(1, button.x, button.y, button.w, button.h, 0xc0c0c0ff);
-        }
-        tileRenderer.begin(texid_font, 0x000000ff, 0xff);
-        for (const button of buttons) {
-          tileRenderer.string(button.x + 8, button.y + (button.h >> 1), button.label);
-        }
-        tileRenderer.end();
-      } break;
-      
-    case "joystick": {
-        const state = inputManager.getPlayer(0);
-        const colw = Math.floor(screenw / 9);
-        const rowh = Math.floor(screenh / 7);
-        const on = 0xffff00ff;
-        const off = 0x80808080;
-        egg.draw_rect(1, colw * 1, rowh * 1, colw, rowh, (state & InputManagerButton.L2) ? on : off);
-        egg.draw_rect(1, colw * 4, rowh * 1, colw, rowh, (state & InputManagerButton.CD) ? on : off);
-        egg.draw_rect(1, colw * 7, rowh * 1, colw, rowh, (state & InputManagerButton.R2) ? on : off);
-        egg.draw_rect(1, colw * 1, rowh * 2, colw, rowh, (state & InputManagerButton.L1) ? on : off);
-        egg.draw_rect(1, colw * 7, rowh * 2, colw, rowh, (state & InputManagerButton.R1) ? on : off);
-        egg.draw_rect(1, colw * 2, rowh * 3, colw, rowh, (state & InputManagerButton.UP) ? on : off);
-        egg.draw_rect(1, colw * 4, rowh * 3, colw, rowh, (state & InputManagerButton.AUX1) ? on : off);
-        egg.draw_rect(1, colw * 6, rowh * 3, colw, rowh, (state & InputManagerButton.NORTH) ? on : off);
-        egg.draw_rect(1, colw * 1, rowh * 4, colw, rowh, (state & InputManagerButton.LEFT) ? on : off);
-        egg.draw_rect(1, colw * 3, rowh * 4, colw, rowh, (state & InputManagerButton.RIGHT) ? on : off);
-        egg.draw_rect(1, colw * 4, rowh * 4, colw, rowh, (state & InputManagerButton.AUX2) ? on : off);
-        egg.draw_rect(1, colw * 5, rowh * 4, colw, rowh, (state & InputManagerButton.WEST) ? on : off);
-        egg.draw_rect(1, colw * 7, rowh * 4, colw, rowh, (state & InputManagerButton.EAST) ? on : off);
-        egg.draw_rect(1, colw * 2, rowh * 5, colw, rowh, (state & InputManagerButton.DOWN) ? on : off);
-        egg.draw_rect(1, colw * 4, rowh * 5, colw, rowh, (state & InputManagerButton.AUX3) ? on : off);
-        egg.draw_rect(1, colw * 6, rowh * 5, colw, rowh, (state & InputManagerButton.SOUTH) ? on : off);
-      } break;
-
+  egg.draw_rect(1, 0, 15 + joyp * 8, screenw, 9, 0x403000ff);
+  tileRenderer.begin(texid_font, 0x80ff80ff, 0xff);
+  let y = 20;
+  for (const device of bus.joyTwoState.devices) {
+    tileRenderer.string(8, y, device.name);
+    y += 8;
   }
-  inputManager.render();
+  tileRenderer.end();
+  
+  egg.draw_decal(1, texid_joystick, screenw - 128, 0, 0, 0, 128, 64, 0);
+  if (joyState) {
+    for (let i=0; i<16; i++) {
+      if (!(joyState & (1 << i))) continue;
+      const [subx, suby, subw, subh] = joystickButtonLocations[i];
+      egg.draw_decal(1, texid_joystick, screenw - 128 + subx, suby, subx, 64 + suby, subw, subh, 0);
+    }
+  }
+  
+  if (textEntry) {
+    tileRenderer.begin(texid_font, 0xffffffff, 0xff);
+    tileRenderer.string(8, 8, textEntry);
+    tileRenderer.end();
+  }
+  
+  bus.render();
 }
 
 exportModule({
