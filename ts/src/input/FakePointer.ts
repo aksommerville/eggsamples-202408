@@ -92,7 +92,7 @@ export class FakePointer {
       this.joyDy = 0;
     } else {
       if (!this.enabled) return;
-      this.enabled = true;
+      this.enabled = false;
       egg.event_enable(egg.EventType.MMOTION, egg.EventState.DISABLED);
       egg.event_enable(egg.EventType.MBUTTON, egg.EventState.DISABLED);
       egg.event_enable(egg.EventType.MWHEEL, egg.EventState.DISABLED);

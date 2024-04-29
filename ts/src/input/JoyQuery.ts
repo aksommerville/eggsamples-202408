@@ -24,6 +24,10 @@ export class JoyQuery {
     "Please press %.",
     "Press % again.",
   ];
+  private labelTexid = 0;
+  private labelw = 0;
+  private labelh = 0;
+  private labelMessage = "";
   private texid = 0;
   private glyphw = 0;
   private glyphh = 0;
@@ -56,7 +60,7 @@ export class JoyQuery {
     this.prompts = prompts;
   }
   
-  setFont(texid: number): void {
+  setFontTilesheet(texid: number): void {
     if (this.texid = texid) {
       const hdr = egg.texture_get_header(this.texid);
       this.glyphw = hdr.w >> 4;
@@ -118,6 +122,38 @@ export class JoyQuery {
   render(): void {
     if (!this.enabled) return;
     egg.draw_rect(1, 0, 0, this.screenw, this.screenh, 0x000000c0);
+    if (this.bus.font) {
+      this.renderWithFont();
+    } else {
+      this.renderWithTiles();
+    }
+  }
+  
+  private renderWithFont(): void {
+    const message = this.getMessage();
+    if (message !== this.labelMessage) {
+      egg.texture_del(this.labelTexid);
+      this.labelTexid = this.bus.font.renderTexture(message);
+      const hdr = egg.texture_get_header(this.labelTexid);
+      this.labelw = hdr.w;
+      this.labelh = hdr.h;
+    }
+    const dstx = (this.screenw >> 1) - (this.labelw >> 1);
+    const dsty = (this.screenh >> 1) - (this.labelh >> 1);
+    egg.draw_decal(1, this.labelTexid, dstx, dsty, 0, 0, this.labelw, this.labelh, 0);
+    if ((this.timeout < TIMEOUT_VISIBLE) && (this.glyphw > 0)) {
+      const x = (this.screenw >> 1) - (this.glyphw >> 1);
+      const y = (this.screenh >> 1) + this.glyphh;
+      const tileid = 0x30 + Math.floor(this.timeout);
+      const srcx = (tileid & 0x0f) * this.glyphw;
+      const srcy = (tileid >> 4) * this.glyphh;
+      egg.draw_mode(egg.XferMode.ALPHA, 0xffffffff, 0xff);
+      egg.draw_decal(1, this.texid, x, y, srcx, srcy, this.glyphw, this.glyphh, 0);
+      egg.draw_mode(egg.XferMode.ALPHA, 0, 0xff);
+    }
+  }
+  
+  private renderWithTiles(): void {
     const message = this.getMessage();
     const tileCount = message.length + ((this.timeout < TIMEOUT_VISIBLE) ? 1 : 0);
     if (!this.tiles || (tileCount * 6 > this.tiles.length)) {

@@ -7,6 +7,7 @@ export class FakeKeyboard {
   public enabled = false;
   private screenw = 0;
   private screenh = 0;
+  private texidOverlay = 0;
   private texid = 0;
   private colw = 0;
   private rowh = 0;
@@ -77,7 +78,7 @@ export class FakeKeyboard {
     this.pages = pages;
   }
   
-  setFont(texid: number): void {
+  setFontTilesheet(texid: number): void {
     if (this.enabled) throw new Error(`Do not reconfigure while enabled.`);
     if (this.texid = texid) {
       const hdr = egg.texture_get_header(this.texid);
@@ -158,30 +159,41 @@ export class FakeKeyboard {
     if ((this.focusX >= 0) && (this.focusY >= 0)) {
       egg.draw_rect(1, this.boardX + this.focusX * this.colw - 1, this.boardY + this.focusY * this.rowh - 1, this.colw + 1, this.rowh + 1, 0xffff00ff);
     }
-    const halfcolw = this.colw >> 1;
-    const halfrowh = this.rowh >> 1;
     const colc = this.pages[0][0].length;
     const rowc = this.pages[0].length;
-    const tileCount = colc * rowc;
-    if (!this.tiles || (tileCount * 6 > this.tiles.length)) {
-      this.tiles = new Uint8Array(tileCount * 6);
-    }
-    let tilep = 0;
-    for (let y=this.boardY, row=0, ty=this.boardY+halfrowh; row<rowc; y+=this.rowh, row++, ty+=this.rowh) {
-      const textRow = this.pages[this.focusPage][row];
-      for (let x=this.boardX, col=0, tx=this.boardX+halfcolw; col<colc; x+=this.colw, col++, tx+=this.colw) {
-        egg.draw_rect(1, x, y, this.colw - 1, this.rowh - 1, 0xe0e0e0c0);
-        this.tiles[tilep++] = tx;
-        this.tiles[tilep++] = tx >> 8;
-        this.tiles[tilep++] = ty;
-        this.tiles[tilep++] = ty >> 8;
-        this.tiles[tilep++] = textRow.charCodeAt(col);
-        this.tiles[tilep++] = 0;
+    
+    if (this.texidOverlay) {
+      for (let y=this.boardY, row=0; row<rowc; y+=this.rowh, row++) {
+        for (let x=this.boardX, col=0; col<colc; x+=this.colw, col++) {
+          egg.draw_rect(1, x, y, this.colw - 1, this.rowh - 1, 0xe0e0e0c0);
+        }
       }
+      egg.draw_decal(1, this.texidOverlay, this.boardX, this.boardY, 0, 0, this.boardW, this.boardH, 0);
+    
+    } else {
+      const halfcolw = this.colw >> 1;
+      const halfrowh = this.rowh >> 1;
+      const tileCount = colc * rowc;
+      if (!this.tiles || (tileCount * 6 > this.tiles.length)) {
+        this.tiles = new Uint8Array(tileCount * 6);
+      }
+      let tilep = 0;
+      for (let y=this.boardY, row=0, ty=this.boardY+halfrowh; row<rowc; y+=this.rowh, row++, ty+=this.rowh) {
+        const textRow = this.pages[this.focusPage][row];
+        for (let x=this.boardX, col=0, tx=this.boardX+halfcolw; col<colc; x+=this.colw, col++, tx+=this.colw) {
+          egg.draw_rect(1, x, y, this.colw - 1, this.rowh - 1, 0xe0e0e0c0);
+          this.tiles[tilep++] = tx;
+          this.tiles[tilep++] = tx >> 8;
+          this.tiles[tilep++] = ty;
+          this.tiles[tilep++] = ty >> 8;
+          this.tiles[tilep++] = textRow.charCodeAt(col);
+          this.tiles[tilep++] = 0;
+        }
+      }
+      egg.draw_mode(egg.XferMode.ALPHA, 0x000000ff, 0xff);
+      egg.draw_tile(1, this.texid, this.tiles.buffer, tileCount);
+      egg.draw_mode(egg.XferMode.ALPHA, 0, 0xff);
     }
-    egg.draw_mode(egg.XferMode.ALPHA, 0x000000ff, 0xff);
-    egg.draw_tile(1, this.texid, this.tiles.buffer, tileCount);
-    egg.draw_mode(egg.XferMode.ALPHA, 0, 0xff);
   }
   
   private refreshMeasurements(): void {
@@ -193,6 +205,27 @@ export class FakeKeyboard {
     this.boardY = this.screenh - 5 - this.boardH;
     this.blotterH = this.boardH + 10;
     this.blotterY = this.screenh - this.blotterH;
+    
+    if (this.bus.font) {
+      if (!this.texidOverlay) this.texidOverlay = egg.texture_new();
+      this.drawOverlay();
+    }
+  }
+  
+  private drawOverlay(): void {
+    if (!this.texidOverlay || !this.bus.font) return;
+    const rowc = this.pages[0].length;
+    const colc = this.pages[0][0].length;
+    const image = this.bus.font.createImage(this.boardW, this.boardH);
+    const halfcolw = this.colw >> 1;
+    const halfrowh = this.rowh >> 1;
+    for (let y=this.boardY, row=0, ty=halfrowh; row<rowc; y+=this.rowh, row++, ty+=this.rowh) {
+      const textRow = this.pages[this.focusPage][row];
+      for (let x=this.boardX, col=0, tx=halfcolw; col<colc; x+=this.colw, col++, tx+=this.colw) {
+        this.bus.font.renderGlyphCentered(image, tx, ty, textRow.charCodeAt(col), 0x000000);
+      }
+    }
+    egg.texture_upload(this.texidOverlay, image.w, image.h, image.stride, image.fmt, image.v);
   }
   
   private onBusEvent(event: egg.Event): void {
@@ -245,9 +278,11 @@ export class FakeKeyboard {
     if (codepoint === 0x01) {
       this.focusPage++;
       if (this.focusPage >= this.pages.length) this.focusPage = 0;
+      this.drawOverlay();
     } else if (codepoint === 0x02) {
       this.focusPage--;
       if (this.focusPage < 0) this.focusPage = this.pages.length - 1;
+      this.drawOverlay();
     } else {
       this.bus.onEvent({ eventType: egg.EventType.TEXT, v0: codepoint, v1: 0, v2: 0, v3: 0});
     }

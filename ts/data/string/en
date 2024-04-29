@@ -1,0 +1,19 @@
+1 English
+2 Troll Slayer
+
+# Input button names.
+12 Left
+13 Right
+14 Up
+15 Down
+16 Jump
+17 Attack
+18 Dash
+19 Pause
+
+# Input prompts.
+20 Fault! Please press %.
+21 Please press %.
+22 Press % again.
+
+23 Que oray?

@@ -103,8 +103,7 @@ export class JoyLogical {
       this.enabled = false;
       this.bus.joyTwoState.unlisten(this.twoStateListener);
       this.twoStateListener = 0;
-      // Don't disable INPUT. It should be on always anyway, but we enable kind of as commentary.
-      egg.event_enable(egg.EventType.KEY, egg.EventState.DISABLED);
+      // Don't disable INPUT or KEY. It should be on always anyway, but we enable kind of as commentary.
       egg.event_enable(egg.EventType.TOUCH, egg.EventState.DISABLED);
     }
   }

@@ -3,6 +3,7 @@ import { JoyLogical } from "./JoyLogical";
 import { JoyQuery } from "./JoyQuery";
 import { FakeKeyboard } from "./FakeKeyboard";
 import { FakePointer } from "./FakePointer";
+import { Font } from "../utility/Font"; // Optional, safe to remove if you're not using it.
 
 /**
  * Global input manager and event bus.
@@ -26,6 +27,7 @@ export class Bus {
     cb: (message: string | 0 | 1) => void;
   }[] = [];
   
+  public font: Font | null = null;
   public joyTwoState = new JoyTwoState(this);
   public joyLogical = new JoyLogical(this);
   public joyQuery = new JoyQuery(this);
@@ -38,12 +40,19 @@ export class Bus {
   }
   
   /**
+   * If you supply a Font, JoyQuery and FakeKeyboard will both use it in preference to fontTilesheet.
+   */
+  setFont(font: Font | null): void {
+    this.font = font;
+  }
+  
+  /**
    * Must be an image containing 16 rows and 16 columns, squares, corresponding to codepoints 0..0xff.
    * The fake keyboard and joystick configurer depend on it.
    */
-  setFont(texid: number): void {
-    this.joyQuery.setFont(texid);
-    this.fakeKeyboard.setFont(texid);
+  setFontTilesheet(texid: number): void {
+    this.joyQuery.setFontTilesheet(texid);
+    this.fakeKeyboard.setFontTilesheet(texid);
   }
   
   /**
@@ -157,7 +166,6 @@ export class Bus {
    */
   listen(events: number | string | string[], cb: (event: egg.Event) => void): number {
     const mask = this.eventMaskFromAnything(events);
-    egg.log(`Bus.listen events=${JSON.stringify(events)} mask=${mask}`);
     if (!mask) return 0;
     const id = this.nextId++;
     this.listeners.push({ id, mask, cb });
