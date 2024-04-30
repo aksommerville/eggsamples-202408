@@ -62,8 +62,6 @@ function egg_client_init(): number {
   bus.setFontTilesheet(texid_font);
   bus.setCursor(texid_cursor, 16, 0, 16, 16, 8, 8);
   
-  refreshBusVerbiage();
-  
   bus.listen("all", event => onEvent(event));
   bus.joyLogical.listen((p, b, v, s) => onPlayerEvent(p, b, v, s));
   bus.requireJoysticks();
@@ -74,10 +72,7 @@ function egg_client_init(): number {
   font.addPage(0x00a1, 8);
   font.addPage(0x0410, 9);
   bus.setFont(font);
-  texid_message = font.renderTexture("This is a long sample of text which will certainly require some line breaking.\n Also an explicit line break and indent.", 200);
-  const hdr = egg.texture_get_header(texid_message);
-  messagew = hdr.w;
-  messageh = hdr.h;
+  refreshBusVerbiage();
   
   return 0;
 }
@@ -99,6 +94,12 @@ function refreshBusVerbiage(): void {
     textService.getString(21),
     textService.getString(22),
   ]);
+  
+  egg.texture_del(texid_message);
+  texid_message = font.renderTexture(textService.getString(24), 200);
+  const hdr = egg.texture_get_header(texid_message);
+  messagew = hdr.w;
+  messageh = hdr.h;
 }
 
 function onEvent(event: egg.Event): void {
