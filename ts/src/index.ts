@@ -120,6 +120,10 @@ function onEvent(event: egg.Event): void {
         egg.log("Received text: U+%x (%c)", event.v0, event.v0);
         if (event.v0 === 0x0a) bus.requireJoysticks();
       } break;
+    case egg.EventType.MBUTTON: if (event.v0 === 1) switch (event.v1) {
+        case 0: bus.setCursor(texid_cursor, 16, 0, 16, 16, 8, 8); break;
+        case 1: bus.setCursor(texid_cursor, 32, 0, 16, 16, 8, 8); break;
+      } break;
   }
 }
 
