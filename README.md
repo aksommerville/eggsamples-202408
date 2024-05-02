@@ -38,6 +38,10 @@ https://webassembly.github.io/spec/core/text/index.html
 
 Wrote enough to prove the concept. It's totally doable. But why would you.
 
+### cfood
+
+Similar to `ts`, building out some helpers in C.
+
 ## TODO
 
 - [ ] ts: Do something useful.

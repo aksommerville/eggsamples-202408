@@ -250,20 +250,10 @@ export class Bus {
    */
   onEvent(event: egg.Event): void {
     switch (event.eventType) {
-      //case egg.EventType.INPUT: devid,btnid,value
-      //case egg.EventType.CONNECT: devid,mapping
-      //case egg.EventType.DISCONNECT: devid
       case egg.EventType.HTTP_RSP: this.onHttpResponse(event.v0, event.v1, event.v2); break;
       case egg.EventType.WS_CONNECT: this.onWsConnect(event.v0); break;
       case egg.EventType.WS_DISCONNECT: this.onWsDisconnect(event.v0); break;
       case egg.EventType.WS_MESSAGE: this.onWsMessage(event.v0, event.v1, event.v2); break;
-      //case egg.EventType.MMOTION: x,y
-      //case egg.EventType.MBUTTON: btnid,value,x,y
-      //case egg.EventType.MWHEEL: dx,dy,x,y
-      //case egg.EventType.KEY: keycode,value
-      //case egg.EventType.TEXT: codepoint
-      //case egg.EventType.TOUCH: id,state,x,y
-      //case egg.EventType.ACCELEROMETER: x,y,z
     }
     const bit = 1 << event.eventType;
     for (const { cb, mask } of this.listeners) {

@@ -20,7 +20,7 @@ export WASI_SDK:=$(realpath ../thirdparty/wasi-sdk-16.0)
 #------------------------------------------------
 # Everything in the repo's root directory (where this Makefile lives) must be named exactly once here.
 
-GAMES_MAKE:=ts minigolf
+GAMES_MAKE:=ts minigolf wat cfood
 GAMES_IGNORE:=Makefile README.md
 
 #------------------------------------------------

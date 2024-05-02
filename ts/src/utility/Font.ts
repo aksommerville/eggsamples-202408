@@ -1,7 +1,10 @@
-import { ImageDecoder, Image } from "./ImageDecoder";
-
-interface FontImage extends Image {
+interface FontImage {
+  v: ArrayBuffer;
   src: Uint8Array; // view into (this.v)
+  w: number;
+  h: number;
+  stride: number;
+  fmt: egg.TextureFormat;
 }
 
 interface FontGlyph {
@@ -32,7 +35,6 @@ interface FontPage {
  *  - Image ID of each page.
  */
 export class Font {
-  private imageDecoder: ImageDecoder;
   private pages: FontPage[] = [];
   private rowh: number;
   private spacew: number;
@@ -43,7 +45,6 @@ export class Font {
     if (rowh < 1) throw new Error(`Invalid row height`);
     this.rowh = rowh;
     this.spacew = this.rowh >> 1;
-    this.imageDecoder = new ImageDecoder();
   }
   
   getRowHeight(): number {
@@ -54,20 +55,26 @@ export class Font {
    * Call directly after construction, once for each page of glyphs you want to use.
    */
   addPage(codepoint: number, imageId: number): boolean {
-    const serial = egg.res_get(egg.ResType.image, 0, imageId);
-    if (!serial || !serial.byteLength) return false;
-    const image = this.imageDecoder.decode(serial);
-    if (!image) return false;
-    if (image.h % this.rowh) return false; // We could just ignore the excess, but there's probably been some mistake.
-    switch (image.fmt) {
+    const hdr = egg.image_get_header(0, imageId);
+    if (!hdr || !hdr.w) return false;
+    switch (hdr.fmt) {
       case egg.TextureFormat.A1:
       case egg.TextureFormat.Y1:
         break;
       default: return false;
     }
+    const v = egg.image_decode(0, imageId);
+    if (!v) return false;
     const page: FontPage = {
+      image: {
+        v,
+        src: new Uint8Array(v),
+        w: hdr.w,
+        h: hdr.h,
+        fmt: hdr.fmt,
+        stride: Math.floor(v.byteLength / hdr.h),
+      },
       codepoint,
-      image: { ...image, src: new Uint8Array(image.v) },
       glyphs: [],
     };
     if (!this.slicePage(page)) return false;
