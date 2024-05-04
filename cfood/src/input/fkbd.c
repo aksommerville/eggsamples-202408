@@ -379,7 +379,6 @@ void fkbd_enable(struct fkbd *fkbd,int enable) {
   } else {
     if (!fkbd->enabled) return;
     fkbd->enabled=0;
-    egg_event_enable(EGG_EVENT_TEXT,EGG_EVTSTATE_DISABLED);
     egg_event_enable(EGG_EVENT_MMOTION,EGG_EVTSTATE_DISABLED);
     egg_event_enable(EGG_EVENT_MBUTTON,EGG_EVTSTATE_DISABLED);
     egg_event_enable(EGG_EVENT_TOUCH,EGG_EVTSTATE_DISABLED);

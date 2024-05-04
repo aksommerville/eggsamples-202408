@@ -96,19 +96,14 @@ struct jlog *jlog_new(struct bus *bus) {
 /* Define player layout.
  */
  
-int jlog_define_mapping_(struct jlog *jlog,...) {
+int jlog_define_mapping(struct jlog *jlog,const int *v,int c) {
+  if (c>16) return -1;
   memset(jlog->stringid_by_btnix,0,sizeof(jlog->stringid_by_btnix));
   memset(jlog->stdbtnid_by_btnix,0,sizeof(jlog->stdbtnid_by_btnix));
-  va_list vargs;
-  va_start(vargs,jlog);
   int btnix=0;
-  for (;;btnix++) {
-    int stringid=va_arg(vargs,int);
-    if (!stringid) break;
-    int stdbtnid=va_arg(vargs,int);
-    if (btnix>=16) return -1;
-    jlog->stringid_by_btnix[btnix]=stringid;
-    jlog->stdbtnid_by_btnix[btnix]=stdbtnid;
+  for (;btnix<c;btnix++) {
+    jlog->stringid_by_btnix[btnix]=*v++;
+    jlog->stdbtnid_by_btnix[btnix]=*v++;
   }
   return 0;
 }
@@ -201,6 +196,21 @@ int jlog_btnid_from_standard(const struct jlog *jlog,int stdbtnid) {
     if (jlog->stdbtnid_by_btnix[p]==stdbtnid) return 1<<p;
   }
   return 0;
+}
+
+int jlog_stringid_for_btnid(const struct jlog *jlog,int btnid) {
+  if (!btnid) return 0;
+  int btnix=0;
+  while (!(btnid&1)) { btnid>>=1; btnix++; }
+  if (btnid!=1) return 0;
+  if (btnix>=16) return 0;
+  return jlog->stringid_by_btnix[btnix];
+}
+
+int jlog_get_state_mask(const struct jlog *jlog) {
+  int mask=0,btnix=0,bit=1;
+  for (;btnix<16;btnix++,bit<<=1) if (jlog->stringid_by_btnix[btnix]) mask|=bit;
+  return mask;
 }
 
 /* Player id with the fewest devices assigned.
@@ -826,6 +836,30 @@ static struct jlog_tm *jlog_find_or_generate_template(struct jlog *jlog,int devi
   jlog_tm_generate(jlog,tm,devid,mapping);
   jlog_store_templates(jlog);
   return tm;
+}
+
+/* Public template access.
+ */
+ 
+void *jlog_clear_template(struct jlog *jlog,int vid,int pid,int version,const char *name,int namec) {
+  if (!name) namec=0; else if (namec<0) { namec=0; while (name[namec]) namec++; }
+  int i=0; for (;i<jlog->tmc;i++) {
+    struct jlog_tm *tm=jlog->tmv[i];
+    if (tm->vid!=vid) continue;
+    if (tm->pid!=pid) continue;
+    if (tm->version!=version) continue;
+    if (tm->namec!=namec) continue;
+    if (memcmp(tm->name,name,namec)) continue;
+    tm->buttonc=0;
+    return tm;
+  }
+  return jlog_tmv_add(jlog,vid,pid,version,name,namec);
+}
+
+int jlog_append_template(struct jlog *jlog,void *_tm,int srcbtnid,char srcpart,int dstbtnid) {
+  if (!_tm) return -1;
+  struct jlog_tm *tm=_tm;
+  return jlog_tm_add_button(tm,srcbtnid,srcpart,dstbtnid);
 }
 
 /* Device connected.

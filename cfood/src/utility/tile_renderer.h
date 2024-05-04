@@ -39,5 +39,6 @@ void tile_renderer_cancel(struct tile_renderer *tr);
  */
 void tile_renderer_tile(struct tile_renderer *tr,int x,int y,int tileid,int xform);
 void tile_renderer_string(struct tile_renderer *tr,int x,int y,const char *src,int srcc);
+void tile_renderer_string_centered(struct tile_renderer *tr,int x,int y,const char *src,int srcc);
 
 #endif

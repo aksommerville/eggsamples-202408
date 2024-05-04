@@ -16,3 +16,16 @@
 14 Aux1
 15 Aux2
 16 Aux3
+
+# Labels for onscreen mode buttons.
+17 raw
+18 joy
+19 text
+20 point
+21 config
+
+# For jcfg.
+22 Device
+23 Fault! Please press %.
+24 Please press %.
+25 Press % again.

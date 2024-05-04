@@ -92,3 +92,9 @@ void tile_renderer_string(struct tile_renderer *tr,int x,int y,const char *src,i
   }
   for (;srcc-->0;src++,x+=tr->tilew) tile_renderer_tile(tr,x,y,*src,0);
 }
+
+void tile_renderer_string_centered(struct tile_renderer *tr,int x,int y,const char *src,int srcc) {
+  if (!src) return;
+  if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  tile_renderer_string(tr,x-((tr->tilew*srcc)>>1)+(tr->tilew>>1),y,src,srcc);
+}

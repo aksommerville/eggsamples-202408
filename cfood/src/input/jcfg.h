@@ -8,17 +8,30 @@
 
 struct jcfg;
 struct bus;
+struct font;
 
-//TODO
+void jcfg_del(struct jcfg *jcfg);
 
-static inline void jcfg_del(struct jcfg *jcfg) {}
+struct jcfg *jcfg_new(struct bus *bus);
 
-static inline struct jcfg *jcfg_new(struct bus *bus) { return (struct jcfg*)""; }
+/* We'll use only the last one you set, of font and tilesheet.
+ */
+void jcfg_set_font(struct jcfg *jcfg,struct font *font);
+void jcfg_set_tilesheet(struct jcfg *jcfg,int texid);
 
-static inline void jcfg_update(struct jcfg *jcfg,double elapsed) {}
-static inline void jcfg_render(struct jcfg *jcfg) {}
+void jcfg_set_strings(struct jcfg *jcfg,
+  int stringid_device, // "Device", will be followed by device name.
+  int stringid_fault, // eg "Fault! Please press %."
+  int stringid_press, // eg "Please press %."
+  int stringid_again // eg "Press % again."
+);
+
+int jcfg_is_complete(const struct jcfg *jcfg);
+
+void jcfg_update(struct jcfg *jcfg,double elapsed);
+void jcfg_render(struct jcfg *jcfg);
 
 // devid zero to disable
-static inline void jcfg_enable(struct jcfg *jcfg,int devid) {}
+void jcfg_enable(struct jcfg *jcfg,int devid);
 
 #endif

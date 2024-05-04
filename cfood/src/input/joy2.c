@@ -640,6 +640,7 @@ void joy2_enable_keyboard(struct joy2 *joy2,int enable) {
   if (enable) {
     if (joy2->key_enabled) return;
     joy2->key_enabled=1;
+    egg_event_enable(EGG_EVENT_TEXT,EGG_EVTSTATE_DISABLED);
     // KEY events should already be enabled, but we can double-check, and also we don't want to create the device if KEY events will not be sent.
     switch (egg_event_enable(EGG_EVENT_KEY,EGG_EVTSTATE_ENABLED)) {
       case EGG_EVTSTATE_ENABLED:
@@ -654,6 +655,7 @@ void joy2_enable_keyboard(struct joy2 *joy2,int enable) {
   } else {
     if (!joy2->key_enabled) return;
     joy2->key_enabled=0;
+    egg_event_enable(EGG_EVENT_TEXT,EGG_EVTSTATE_ENABLED);
     // Don't disable KEY events. They're supposed to stay on at all times.
     int p=joy2_devicev_search(joy2,JOY2_DEVID_KEYBOARD);
     if (p>=0) {
