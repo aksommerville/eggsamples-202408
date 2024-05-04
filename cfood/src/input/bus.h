@@ -76,6 +76,7 @@ struct jcfg;
 struct fkbd *bus_get_fkbd(const struct bus *bus);
 struct fkpt *bus_get_fkpt(const struct bus *bus);
 struct joy2 *bus_get_joy2(const struct bus *bus);
+struct jlog *bus_get_jlog(const struct bus *bus);
 struct jcfg *bus_get_jcfg(const struct bus *bus);
 
 /* Hooks to call the delegate, or any other internal processing.

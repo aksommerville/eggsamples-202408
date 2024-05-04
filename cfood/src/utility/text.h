@@ -11,4 +11,6 @@
  */
 int text_utf8_decode(int *codepoint,const void *src,int srcc);
 
+int text_utf8_encode(void *dst,int dsta,int codepoint);
+
 #endif

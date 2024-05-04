@@ -8,16 +8,26 @@
 struct fkpt;
 struct bus;
 
-//TODO
+void fkpt_del(struct fkpt *fkpt);
 
-static inline void fkpt_del(struct fkpt *fkpt) {}
+struct fkpt *fkpt_new(struct bus *bus);
 
-static inline struct fkpt *fkpt_new(struct bus *bus) { return (struct fkpt*)""; }
+/* Set an image for the cursor.
+ * texid zero for no fake cursor, we'll use the system's if possible.
+ * Bounds (0,0,0,0) to use the entire texture.
+ * (hotx,hoty) should be in (0,0)..(w-1,h-1).
+ * We borrow the texture ID; caller must keep it alive.
+ */
+void fkpt_set_cursor(
+  struct fkpt *fkpt,
+  int texid,int x,int y,int w,int h,int xform,
+  int hotx,int hoty
+);
 
-static inline void fkpt_event(struct fkpt *fkpt,const struct egg_event *event) {}
-static inline void fkpt_update(struct fkpt *fkpt,double elapsed) {}
-static inline void fkpt_render(struct fkpt *fkpt) {}
+void fkpt_event(struct fkpt *fkpt,const struct egg_event *event);
+void fkpt_update(struct fkpt *fkpt,double elapsed);
+void fkpt_render(struct fkpt *fkpt);
 
-static inline void fkpt_enable(struct fkpt *fkpt,int enable) {}
+void fkpt_enable(struct fkpt *fkpt,int enable);
 
 #endif

@@ -12,7 +12,7 @@ ifeq (,$(WASI_SDK))
   WASI_SDK:=../../thirdparty/wasi-sdk-16.0
 endif
 
-CC:=$(WASI_SDK)/bin/clang -c -MMD -O3 -Isrc -I$(EGG_SDK)/src -Werror -Wimplicit -Wno-comment
+CC:=$(WASI_SDK)/bin/clang -c -MMD -O3 -Isrc -I$(EGG_SDK)/src -Werror -Wimplicit -Wno-comment -Wno-parentheses
 LD:=$(WASI_SDK)/bin/clang -Wl,--no-entry -Wl,--export-table -Wl,--export-all -Wl,--import-undefined -Wl,--allow-undefined -Wl,--initial-memory=10485760
 
 clean:;rm -rf mid out

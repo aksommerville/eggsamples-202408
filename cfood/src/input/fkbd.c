@@ -1,6 +1,7 @@
 #include <egg/egg.h>
 #include "fkbd.h"
 #include "bus.h"
+#include "jlog.h"
 #include "../utility/font.h"
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,9 @@
 #define FKBD_DEFAULT_COLC 12
 #define FKBD_DEFAULT_ROWC 3
 #define FKBD_DEFAULT_PAGEC 3
+
+#define FKBD_REPEAT_TIME_INITIAL 0.333
+#define FKBD_REPEAT_TIME_MORE    0.100
 
 static const int FKBD_DEFAULT_CONTENT[
   FKBD_DEFAULT_COLC*FKBD_DEFAULT_ROWC*FKBD_DEFAULT_PAGEC
@@ -48,6 +52,10 @@ struct fkbd {
   struct egg_draw_tile *vtxv;
   int vtxa;
   int overlay; // texid, STRONG
+  int pvstate;
+  int btnidl,btnidr,btnidu,btnidd,btnidb;
+  int dx,dy;
+  double repeat_time;
 };
 
 /* Delete.
@@ -260,13 +268,50 @@ void fkbd_event(struct fkbd *fkbd,const struct egg_event *event) {
   }
 }
 
+/* Move pointer according to (dx,dy).
+ */
+ 
+static void fkbd_move_rel(struct fkbd *fkbd) {
+  if (fkbd->dx&&fkbd->colc) {
+    fkbd->colp+=fkbd->dx;
+    if (fkbd->colp<0) fkbd->colp=fkbd->colc-1;
+    else if (fkbd->colp>=fkbd->colc) fkbd->colp=0;
+  }
+  if (fkbd->dy&&fkbd->rowc) {
+    fkbd->rowp+=fkbd->dy;
+    if (fkbd->rowp<0) fkbd->rowp=fkbd->rowc-1;
+    else if (fkbd->rowp>=fkbd->rowc) fkbd->rowp=0;
+  }
+}
+
 /* Update.
  */
  
 void fkbd_update(struct fkbd *fkbd,double elapsed) {
   if (!fkbd->enabled) return;
-  //TODO repeat-motion on joystick dpad
-  //TODO How to receive joystick state?
+  
+  // Receive joystick events.
+  int state=jlog_get_player(bus_get_jlog(fkbd->bus),0);
+  if (state!=fkbd->pvstate) {
+    #define BTN(btnid,on,off) \
+      if ((state&fkbd->btnid)&&!(fkbd->pvstate&fkbd->btnid)) { on; fkbd_move_rel(fkbd); fkbd->repeat_time=FKBD_REPEAT_TIME_INITIAL; } \
+      else if (!(state&fkbd->btnid)&&(fkbd->pvstate&fkbd->btnid)) off;
+    BTN(btnidl,fkbd->dx=-1,if (fkbd->dx<0) fkbd->dx=0)
+    BTN(btnidr,fkbd->dx= 1,if (fkbd->dx>0) fkbd->dx=0)
+    BTN(btnidu,fkbd->dy=-1,if (fkbd->dy<0) fkbd->dy=0)
+    BTN(btnidd,fkbd->dy= 1,if (fkbd->dy>0) fkbd->dy=0)
+    #undef BTN
+    if ((state&fkbd->btnidb)&&!(fkbd->pvstate&fkbd->btnidb)) fkbd_activate(fkbd);
+    fkbd->pvstate=state;
+  }
+  
+  // Auto-repeat relative motion.
+  if (fkbd->dx||fkbd->dy) {
+    if ((fkbd->repeat_time-=elapsed)<=0.0) {
+      fkbd_move_rel(fkbd);
+      fkbd->repeat_time+=FKBD_REPEAT_TIME_MORE;
+    }
+  }
 }
 
 /* Render.
@@ -320,6 +365,16 @@ void fkbd_enable(struct fkbd *fkbd,int enable) {
     egg_event_enable(EGG_EVENT_MMOTION,EGG_EVTSTATE_ENABLED);
     egg_event_enable(EGG_EVENT_MBUTTON,EGG_EVTSTATE_ENABLED);
     egg_event_enable(EGG_EVENT_TOUCH,EGG_EVTSTATE_ENABLED);
+    struct jlog *jlog=bus_get_jlog(fkbd->bus);
+    fkbd->btnidl=jlog_btnid_from_standard(jlog,STDBTN_LEFT);
+    fkbd->btnidr=jlog_btnid_from_standard(jlog,STDBTN_RIGHT);
+    fkbd->btnidu=jlog_btnid_from_standard(jlog,STDBTN_UP);
+    fkbd->btnidd=jlog_btnid_from_standard(jlog,STDBTN_DOWN);
+    int btnidv[]={STDBTN_SOUTH,STDBTN_EAST,STDBTN_R1,STDBTN_L1,STDBTN_LP,STDBTN_WEST,STDBTN_NORTH,STDBTN_R2,STDBTN_L2,STDBTN_RP,STDBTN_AUX1,STDBTN_AUX2,STDBTN_AUX3,0};
+    const int *btnid=btnidv;
+    for (;*btnid;btnid++) {
+      if (fkbd->btnidb=jlog_btnid_from_standard(jlog,*btnid)) break;
+    }
     fkbd->dirty=1;
   } else {
     if (!fkbd->enabled) return;

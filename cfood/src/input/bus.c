@@ -25,6 +25,7 @@ struct bus {
 
 void bus_del(struct bus *bus) {
   if (!bus) return;
+  bus_mode_raw(bus); // Important to turn everything off before we delete anything.
   fkbd_del(bus->fkbd);
   fkpt_del(bus->fkpt);
   joy2_del(bus->joy2);
@@ -69,6 +70,10 @@ struct joy2 *bus_get_joy2(const struct bus *bus) {
   return bus->joy2;
 }
 
+struct jlog *bus_get_jlog(const struct bus *bus) {
+  return bus->jlog;
+}
+
 struct jcfg *bus_get_jcfg(const struct bus *bus) {
   return bus->jcfg;
 }
@@ -84,6 +89,7 @@ void bus_mode_raw(struct bus *bus) {
   if (bus->mode==BUS_MODE_RAW) return;
   fkbd_enable(bus->fkbd,0);
   fkpt_enable(bus->fkpt,0);
+  joy2_enable_keyboard(bus->joy2,0);
   joy2_enable_touch(bus->joy2,0);
   jlog_enable(bus->jlog,0);
   jcfg_enable(bus->jcfg,0);
@@ -95,6 +101,7 @@ void bus_mode_joy(struct bus *bus) {
   fkbd_enable(bus->fkbd,0);
   fkpt_enable(bus->fkpt,0);
   jcfg_enable(bus->jcfg,0);
+  joy2_enable_keyboard(bus->joy2,1);
   joy2_enable_touch(bus->joy2,1);
   jlog_enable(bus->jlog,1);
   bus->mode=BUS_MODE_JOY;
@@ -103,8 +110,9 @@ void bus_mode_joy(struct bus *bus) {
 void bus_mode_text(struct bus *bus) {
   if (bus->mode==BUS_MODE_TEXT) return;
   fkpt_enable(bus->fkpt,0);
+  joy2_enable_keyboard(bus->joy2,0);
   joy2_enable_touch(bus->joy2,0);
-  jlog_enable(bus->jlog,0);
+  jlog_enable(bus->jlog,1); // jlog stays on, just we don't feed it key or touch anymore.
   jcfg_enable(bus->jcfg,0);
   fkbd_enable(bus->fkbd,1);
   bus->mode=BUS_MODE_TEXT;
@@ -113,8 +121,9 @@ void bus_mode_text(struct bus *bus) {
 void bus_mode_point(struct bus *bus) {
   if (bus->mode==BUS_MODE_POINT) return;
   fkbd_enable(bus->fkbd,0);
+  joy2_enable_keyboard(bus->joy2,1);
   joy2_enable_touch(bus->joy2,0);
-  jlog_enable(bus->jlog,0);
+  jlog_enable(bus->jlog,1); // jlog stays on, and we feed it key but not touch.
   jcfg_enable(bus->jcfg,0);
   fkpt_enable(bus->fkpt,1);
   bus->mode=BUS_MODE_POINT;
@@ -125,6 +134,7 @@ void bus_mode_config(struct bus *bus,int devid) {
   fkbd_enable(bus->fkbd,0);
   fkpt_enable(bus->fkpt,0);
   jlog_enable(bus->jlog,0);
+  joy2_enable_keyboard(bus->joy2,1);
   joy2_enable_touch(bus->joy2,1);
   jcfg_enable(bus->jcfg,devid);
   bus->mode=BUS_MODE_CONFIG;
@@ -141,7 +151,6 @@ static void bus_event(struct bus *bus,const struct egg_event *event) {
   switch (bus->mode) {
     case BUS_MODE_TEXT: fkbd_event(bus->fkbd,event); break;
     case BUS_MODE_POINT: fkpt_event(bus->fkpt,event); break;
-    case BUS_MODE_JOY: jlog_event(bus->jlog,event); break;
   }
 }
 
