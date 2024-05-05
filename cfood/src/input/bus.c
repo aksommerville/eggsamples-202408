@@ -267,7 +267,6 @@ void bus_on_mmotion(struct bus *bus,int x,int y) {
 }
 
 void bus_on_mbutton(struct bus *bus,int btnid,int value,int x,int y) {
-  egg_log("%s %d=%d @%d,%d",__func__,btnid,value,x,y);
   if (bus->delegate.on_mbutton) bus->delegate.on_mbutton(btnid,value,x,y);
 }
 

@@ -609,7 +609,7 @@ static int jlog_encode_templates(void *dstpp,const struct jlog *jlog) {
         dstc+=err;
         break;
       }
-      dsta=(dstc+1024)&~1023;
+      dsta=(dstc+err+1024)&~1023;
       void *nv=realloc(dst,dsta);
       if (!nv) {
         free(dst);
