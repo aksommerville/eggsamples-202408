@@ -52,6 +52,7 @@ struct menu *menu_new_video(struct menu *parent);
 struct menu *menu_new_audio(struct menu *parent);
 struct menu *menu_new_store(struct menu *parent);
 struct menu *menu_new_misc(struct menu *parent);
+struct menu *menu_new_joystick(struct menu *parent);
 
 int menu_option_add(struct menu *menu,const char *src,int srcc);
 void menu_option_event(struct menu *menu,const union egg_event *event);

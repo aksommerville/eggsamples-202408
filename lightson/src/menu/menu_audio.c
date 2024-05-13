@@ -186,6 +186,7 @@ static void _audio_render(struct menu *menu) {
     fract=modf(playhead,&whole);
     uint8_t alpha=(fract<=0.0)?0xff:(fract>=1.0)?0:((1.0-fract)*0xff);
     int beat=(int)whole;
+    if (beat<0) beat=0;
     char tmp[4]={
       '0'+(beat/1000)%10,
       '0'+(beat/ 100)%10,

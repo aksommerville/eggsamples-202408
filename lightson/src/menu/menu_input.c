@@ -4,7 +4,7 @@
 
 static void _input_option(struct menu *menu) {
   switch (menu->optionp) {
-    case 0: break; // Joystick
+    case 0: menu_new_joystick(menu); break;
     case 1: break; // Raw Joystick
     case 2: break; // Keyboard
     case 3: break; // Mouse
