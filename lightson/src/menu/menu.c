@@ -208,3 +208,145 @@ void menu_option_render(struct menu *menu) {
     tile_renderer_end(menu->tile_renderer);
   }
 }
+
+static void menu_option_dirty(struct menu *menu) {
+  if (menu->optiontex) {
+    egg_texture_del(menu->optiontex);
+    menu->optiontex=0;
+  }
+}
+
+/* Tail of menu option, conveniences.
+ */
+ 
+int menu_option_read_tail_string(char *dst,int dsta,const struct menu *menu,int p) {
+  int dstc=0;
+  if ((p>=0)&&(p<menu->optionc)) {
+    const char *src=menu->optionv[p];
+    int srcc=0; while (src[srcc]) srcc++;
+    while (srcc&&((unsigned char)src[srcc-1]<=0x20)) srcc--;
+    const char *token=src+srcc;
+    while (srcc&&((unsigned char)src[srcc-1]>0x20)) { srcc--; token--; dstc++; }
+    if (dstc<=dsta) memcpy(dst,token,dstc);
+  }
+  if (dstc<dsta) dst[dstc]=0;
+  return dstc;
+}
+
+int menu_option_read_tail_int(const struct menu *menu,int p) {
+  char tmp[16];
+  int tmpc=menu_option_read_tail_string(tmp,sizeof(tmp),menu,p);
+  if ((tmpc<1)||(tmpc>sizeof(tmp))) return 0;
+  if ((tmpc==4)&&!memcmp(tmp,"true",4)) return 1;
+  if ((tmpc==5)&&!memcmp(tmp,"false",5)) return 0;
+  int v=0,tmpp=0;
+  if ((tmpp<tmpc)&&(tmp[tmpp]=='-')) {
+    tmpp++;
+    while (tmpp<tmpc) {
+      int digit=tmp[tmpp++]-'0';
+      if ((digit<0)||(digit>9)) return 0;
+      v*=10;
+      v-=digit;
+    }
+  } else {
+    while (tmpp<tmpc) {
+      int digit=tmp[tmpp++]-'0';
+      if ((digit<0)||(digit>9)) return 0;
+      v*=10;
+      v+=digit;
+    }
+  }
+  return v;
+}
+
+double menu_option_read_tail_double(const struct menu *menu,int p) {
+  char tmp[16];
+  int tmpc=menu_option_read_tail_string(tmp,sizeof(tmp),menu,p);
+  if ((tmpc<1)||(tmpc>sizeof(tmp))) return 0.0;
+  double v=0.0;
+  int tmpp=0,positive=1;
+  if ((tmpp<tmpc)&&(tmp[tmpp]=='-')) { positive=0; tmpp++; }
+  while ((tmpp<tmpc)&&(tmp[tmpp]>='0')&&(tmp[tmpp]<='9')) {
+    int digit=tmp[tmpp++]-'0';
+    v*=10.0;
+    if (positive) v+=digit; else v-=digit;
+  }
+  if ((tmpp<tmpc)&&(tmp[tmpp]=='.')) {
+    tmpp++;
+    double coef=1.0;
+    while ((tmpp<tmpc)&&(tmp[tmpp]>='0')&&(tmp[tmpp]<='9')) {
+      int digit=tmp[tmpp++]-'0';
+      coef*=0.1;
+      if (positive) v+=digit*coef; else v-=digit*coef;
+    }
+  }
+  return v;
+}
+
+int menu_option_rewrite_tail_string(struct menu *menu,int p,const char *src,int srcc) {
+  if ((p<0)||(p>=menu->optionc)) return -1;
+  if (!src) srcc=0; else if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  char *prev=menu->optionv[p];
+  int prevc=0; while (prev[prevc]) prevc++;
+  while (prevc&&((unsigned char)prev[prevc-1]<=0x20)) prevc--;
+  while (prevc&&((unsigned char)prev[prevc-1]>0x20)) prevc--;
+  while (prevc&&((unsigned char)prev[prevc-1]<=0x20)) prevc--;
+  int nc=prevc+1+srcc;
+  char *nv=malloc(nc+1);
+  if (!nv) return -1;
+  memcpy(nv,prev,prevc);
+  nv[prevc]=' ';
+  memcpy(nv+prevc+1,src,srcc);
+  nv[nc]=0;
+  free(prev);
+  menu->optionv[p]=nv;
+  menu_option_dirty(menu);
+  return 0;
+}
+
+int menu_option_rewrite_tail_int(struct menu *menu,int p,int v) {
+  char tmp[16];
+  int tmpc=0;
+  if (v<0) {
+    tmp[tmpc++]='-';
+    v=-v;
+  }
+  if (v>=1000000000) tmp[tmpc++]='0'+v/1000000000;
+  if (v>= 100000000) tmp[tmpc++]='0'+(v/100000000)%10;
+  if (v>=  10000000) tmp[tmpc++]='0'+(v/10000000)%10;
+  if (v>=   1000000) tmp[tmpc++]='0'+(v/1000000)%10;
+  if (v>=    100000) tmp[tmpc++]='0'+(v/100000)%10;
+  if (v>=     10000) tmp[tmpc++]='0'+(v/10000)%10;
+  if (v>=      1000) tmp[tmpc++]='0'+(v/1000)%10;
+  if (v>=       100) tmp[tmpc++]='0'+(v/100)%10;
+  if (v>=        10) tmp[tmpc++]='0'+(v/10)%10;
+  tmp[tmpc++]='0'+v%10;
+  return menu_option_rewrite_tail_string(menu,p,tmp,tmpc);
+}
+
+int menu_option_rewrite_tail_double(struct menu *menu,int p,double v) {
+  char tmp[8];
+  int tmpc=0;
+  if (v<0.0) {
+    tmp[tmpc++]='-';
+    v=-v;
+  }
+  if (v>=100.0) {
+    int n=((int)v/100)%10;
+    if (n<0) n=0; else if (n>9) n=9;
+    tmp[tmpc++]='0'+n;
+  }
+  if (v>=10.0) {
+    int n=((int)v/10)%10;
+    if (n<0) n=0; else if (n>9) n=9;
+    tmp[tmpc++]='0'+n;
+  }
+  int n=(int)v%10;
+  if (n<0) n=0; else if (n>9) n=9;
+  tmp[tmpc++]='0'+n;
+  tmp[tmpc++]='.';
+  tmp[tmpc++]='0'+((int)(v*10.0)%10);
+  tmp[tmpc++]='0'+((int)(v*100.0)%10);
+  tmp[tmpc++]='0'+((int)(v*1000.0)%10);
+  return menu_option_rewrite_tail_string(menu,p,tmp,tmpc);
+}

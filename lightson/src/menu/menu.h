@@ -58,4 +58,13 @@ void menu_option_event(struct menu *menu,const union egg_event *event);
 void menu_option_update(struct menu *menu,double elapsed);
 void menu_option_render(struct menu *menu);
 
+// Helpers for reading or replacing the last token in a menu option.
+// If you have something like "Res ID: 123" and want to go left/right to change it.
+int menu_option_read_tail_string(char *dst,int dsta,const struct menu *menu,int p);
+int menu_option_read_tail_int(const struct menu *menu,int p);
+double menu_option_read_tail_double(const struct menu *menu,int p);
+int menu_option_rewrite_tail_string(struct menu *menu,int p,const char *src,int srcc);
+int menu_option_rewrite_tail_int(struct menu *menu,int p,int v);
+int menu_option_rewrite_tail_double(struct menu *menu,int p,double v); // 3 digits each, whole and fract
+
 #endif

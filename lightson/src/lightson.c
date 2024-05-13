@@ -52,7 +52,7 @@ int egg_client_init() {
   #undef DISEV
   
   if (!(menu=menu_new_main())) return -1;
-  //menu->font=font;
+  menu->font=font;
   menu->screenw=screenw;
   menu->screenh=screenh;
   menu->tile_renderer=&tile_renderer;
