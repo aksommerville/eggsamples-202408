@@ -79,7 +79,7 @@ export class JoyQuery {
   begin(devid: number): boolean {
     this.enabled = false;
     if (!devid) return false;
-    if (!this.texid) return false;
+    if (!this.texid && !this.bus.font) return false;
     if (!this.buttonNames.length) return false;
     this.device = this.bus.joyTwoState.devices.find(d => d.devid === devid) || null;
     if (!this.device) return false;
