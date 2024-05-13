@@ -20,11 +20,11 @@ Keeping for now as a reference, while I build out the new ones.
 
 - [ ] General utilities.
 - - [x] tile_renderer
-- - [ ] font
-- - [ ] menu
-- - [ ] strings
+- - [x] font
+- - [x] menu
+- - [x] strings
 - - [ ] input coersion (fake keyboard, fake pointer, keyboard and touch as joystick, etc)
-- [ ] libc
+- [x] libc
 - [ ] Lights-on test ROM. Hit every entry point.
 - [ ] A game in C.
 - [ ] A game in WAT
