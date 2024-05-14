@@ -15,12 +15,27 @@
 static int screenw,screenh;
 
 static int texid_font_tiles=0;
-static int texid_message=0;
 static struct tile_renderer tile_renderer={0};
 static struct font *font=0;
 static struct menu *menu=0;
  
 void egg_client_quit() {
+}
+
+void lightson_default_event_mask(int log) {
+  #define ENEV(tag) if (!egg_event_enable(EGG_EVENT_##tag,1)) { if (log) egg_log("Failed to enable %s events.",#tag); }
+  #define DISEV(tag) egg_event_enable(EGG_EVENT_##tag,0);
+  ENEV(JOY) // JOY, KEY, and TEXT are enabled by default anyway.
+  ENEV(KEY)
+  ENEV(TEXT)
+  ENEV(MMOTION) // Enabling any mouse event also makes the system cursor visible.
+  ENEV(MBUTTON)
+  ENEV(MWHEEL)
+  ENEV(TOUCH) // Enabled by default.
+  DISEV(ACCEL) // Bad idea to enable, it causes a lot of noise if it actually exists.
+  DISEV(RAW) // Prefer JOY.
+  #undef ENEV
+  #undef DISEV
 }
 
 int egg_client_init() {
@@ -35,21 +50,7 @@ int egg_client_init() {
   if (font_add_page(font,RID_image_font_9h_400,0x400)<0) return -1;
   if (font_add_page(font,RID_image_font_9h_01,0x01)<0) return -1;
   
-  texid_message=font_render_new_texture(font,"Here's some pretty text with word wrap and variable-width glyphs.",-1,100,0xffffff);
-  
-  #define ENEV(tag) if (!egg_event_enable(EGG_EVENT_##tag,1)) egg_log("Failed to enable %s events.",#tag);
-  #define DISEV(tag) egg_event_enable(EGG_EVENT_##tag,0);
-  ENEV(JOY) // JOY, KEY, and TEXT are enabled by default anyway.
-  ENEV(KEY)
-  ENEV(TEXT)
-  ENEV(MMOTION) // Enabling any mouse event also makes the system cursor visible.
-  ENEV(MBUTTON)
-  ENEV(MWHEEL)
-  ENEV(TOUCH) // Enabled by default.
-  DISEV(ACCEL) // Bad idea to enable, it causes a lot of noise if it actually exists.
-  DISEV(RAW) // Prefer JOY.
-  #undef ENEV
-  #undef DISEV
+  lightson_default_event_mask(1);
   
   if (!(menu=menu_new_main())) return -1;
   menu->font=font;
@@ -61,7 +62,7 @@ int egg_client_init() {
   return 0;
 }
  
-static void pop_menu() {
+void pop_menu() {
   if (!menu) {
     egg_request_termination();
     return;

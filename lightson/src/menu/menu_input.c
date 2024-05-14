@@ -5,11 +5,12 @@
 static void _input_option(struct menu *menu) {
   switch (menu->optionp) {
     case 0: menu_new_joystick(menu); break;
-    case 1: break; // Raw Joystick
-    case 2: break; // Keyboard
-    case 3: break; // Mouse
-    case 4: break; // Touch
-    case 5: break; // Accelerometer
+    case 1: menu_new_raw(menu); break;
+    case 2: menu_new_keyboard(menu); break;
+    case 3: menu_new_mouse(menu); break;
+    case 4: menu_new_mouselock(menu); break;
+    case 5: menu_new_touch(menu); break;
+    case 6: menu_new_accelerometer(menu); break;
   }
 }
  
@@ -26,6 +27,7 @@ struct menu *menu_new_input(struct menu *parent) {
     (menu_option_add(menu,"Raw Joystick",12)<0)||
     (menu_option_add(menu,"Keyboard",8)<0)||
     (menu_option_add(menu,"Mouse",5)<0)||
+    (menu_option_add(menu,"Mouse Lock",10)<0)||
     (menu_option_add(menu,"Touch",5)<0)||
     (menu_option_add(menu,"Accelerometer",13)<0)||
   0) {

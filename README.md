@@ -26,6 +26,8 @@ Keeping for now as a reference, while I build out the new ones.
 - - [ ] input coersion (fake keyboard, fake pointer, keyboard and touch as joystick, etc)
 - [x] libc
 - [ ] Lights-on test ROM. Hit every entry point.
+- - [ ] Sound effects on UI activity. (it's not just fluff, it helps validate audio)
+- - [ ] Report high water mark and final state (memory leaks) from malloc.
 - [ ] A game in C.
 - [ ] A game in WAT
 - [ ] A game in C++. Not going to bother with C++-conventional libs, but do at least demonstrate it can be done.

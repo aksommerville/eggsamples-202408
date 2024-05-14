@@ -53,6 +53,12 @@ struct menu *menu_new_audio(struct menu *parent);
 struct menu *menu_new_store(struct menu *parent);
 struct menu *menu_new_misc(struct menu *parent);
 struct menu *menu_new_joystick(struct menu *parent);
+struct menu *menu_new_raw(struct menu *parent);
+struct menu *menu_new_keyboard(struct menu *parent);
+struct menu *menu_new_mouse(struct menu *parent);
+struct menu *menu_new_mouselock(struct menu *parent);
+struct menu *menu_new_touch(struct menu *parent);
+struct menu *menu_new_accelerometer(struct menu *parent);
 
 int menu_option_add(struct menu *menu,const char *src,int srcc);
 void menu_option_event(struct menu *menu,const union egg_event *event);
@@ -67,5 +73,9 @@ double menu_option_read_tail_double(const struct menu *menu,int p);
 int menu_option_rewrite_tail_string(struct menu *menu,int p,const char *src,int srcc);
 int menu_option_rewrite_tail_int(struct menu *menu,int p,int v);
 int menu_option_rewrite_tail_double(struct menu *menu,int p,double v); // 3 digits each, whole and fract
+
+// Declaring this here since a lot of menus need it. Implemented by lightson.c.
+void lightson_default_event_mask(int log);
+void pop_menu();
 
 #endif
