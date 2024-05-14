@@ -18,6 +18,7 @@ static int texid_font_tiles=0;
 static struct tile_renderer tile_renderer={0};
 static struct font *font=0;
 static struct menu *menu=0;
+int texid_misc=0;
  
 void egg_client_quit() {
 }
@@ -43,6 +44,7 @@ int egg_client_init() {
   egg_texture_get_header(&screenw,&screenh,0,1);
   
   if (egg_texture_load_image(texid_font_tiles=egg_texture_new(),0,RID_image_font_tiles)<0) return -1;
+  if (egg_texture_load_image(texid_misc=egg_texture_new(),0,RID_image_misctiles)<0) return -1;
   
   if (!(font=font_new(9))) return -1;
   if (font_add_page(font,RID_image_font_9h_21,0x21)<0) return -1;

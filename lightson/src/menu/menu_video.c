@@ -4,6 +4,10 @@
 
 static void _video_option(struct menu *menu) {
   switch (menu->optionp) {
+    case 0: menu_new_primitives(menu); break;
+    case 1: menu_new_transforms(menu); break;
+    case 2: menu_new_sprites(menu); break;
+    case 3: menu_new_framebuffer(menu); break;
   }
 }
  
@@ -16,8 +20,10 @@ struct menu *menu_new_video(struct menu *parent) {
   menu->on_option=_video_option;
   
   if (
-    (menu_option_add(menu,"Draw Stuff",-1)<0)||
-    (menu_option_add(menu,"Draw Other Stuff",-1)<0)||
+    (menu_option_add(menu,"Primitives",-1)<0)||
+    (menu_option_add(menu,"Transforms",-1)<0)||
+    (menu_option_add(menu,"Too Many Sprites",-1)<0)||
+    (menu_option_add(menu,"Intermediate Framebuffer",-1)<0)||
   0) {
     menu_del(menu);
     return 0;

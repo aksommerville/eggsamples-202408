@@ -11,6 +11,8 @@
   #include <stdlib.h>
   #include <limits.h>
   #include <math.h>
+  #include <time.h>
+  static inline void srand_auto() { srand(time(0)); }
 #else
 
 #define INT_MIN (int)(0x80000000)

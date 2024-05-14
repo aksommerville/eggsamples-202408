@@ -59,6 +59,10 @@ struct menu *menu_new_mouse(struct menu *parent);
 struct menu *menu_new_mouselock(struct menu *parent);
 struct menu *menu_new_touch(struct menu *parent);
 struct menu *menu_new_accelerometer(struct menu *parent);
+struct menu *menu_new_primitives(struct menu *parent);
+struct menu *menu_new_transforms(struct menu *parent);
+struct menu *menu_new_sprites(struct menu *parent);
+struct menu *menu_new_framebuffer(struct menu *parent);
 
 int menu_option_add(struct menu *menu,const char *src,int srcc);
 void menu_option_event(struct menu *menu,const union egg_event *event);
