@@ -10,7 +10,7 @@ ifndef EGG_SDK
   EGG_SDK:=../../egg
 endif
 ifndef EGG_ARCH
-  EGG_ARCH:=linux
+  EGG_ARCH:=$(firstword $(filter linux macos mswin,$(notdir $(wildcard $(EGG_SDK)/out/*))))
 endif
 EGGDEV:=$(EGG_SDK)/out/tools/eggdev
 EGG:=$(EGG_SDK)/out/$(EGG_ARCH)/egg

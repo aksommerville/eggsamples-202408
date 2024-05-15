@@ -1,0 +1,20 @@
+sound 1 # pew!
+  master 0.200
+  rate 900 250 400
+  level 0.0 25 1.0 100 0.200 125 0.0
+end
+
+sound 2 # ouch!
+  master 0.080
+  fm 1.5 2.0
+  fmenv 0.0 50 1.0 200 0.0
+  rate 400 250 500
+  level 0.0 50 1.0 150 0.125 50 0.0
+end
+
+sound 3 # nnnngt!
+  master 0.200
+  fm 0.5 3.0
+  rate 200
+  level 0.0 80 1.0 100 0.100 200 0.0
+end

@@ -3,6 +3,7 @@
 Games for Egg that you can use as a starting point or reference.
 
 Everything in this repository -- assets as well as code -- is in the public domain.
+Except `stdlib/math.c`, copied from newlib (https://sourceware.org/git/newlib-cygwin.git) and modified.
 
 ## How to Build
 
@@ -15,6 +16,20 @@ Everything in this repository -- assets as well as code -- is in the public doma
 
 ts, minigolf, wat, cfood: Written against an earlier and incompatible version of Egg.
 Keeping for now as a reference, while I build out the new ones.
+
+### lightson
+
+Egg's official test ROM.
+It exposes pretty much all of the platform's features, in a fashion easy to validate.
+I use this to discover differences between ports of the platform.
+
+### shmup
+
+Like Space Invaders.
+Intended to demonstrate the barest minimum of everything.
+At just a hair over 10 kB, this is about as small as an Egg game can be.
+Also it's not much fun.
+Write something better!
 
 ## TODO
 
@@ -40,7 +55,7 @@ Keeping for now as a reference, while I build out the new ones.
 What kind of demo games should I write? Looks like we'll need half a dozen or so.
 
 - Rhythm.
-- Space Invaders. Maybe in WAT, since it's not complicated.
+- ~Space Invaders. Maybe in WAT, since it's not complicated.~
 - Visual Novel. The important thing being input: Mouse, Touch, Joystick, and Keyboard should all be useable.
 - - Ooh ooh! Make it a gritty detective story like Deja Vu so we can call it "Hard Boiled"!
 - Platformer.
