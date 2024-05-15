@@ -27,13 +27,10 @@ void stars_init() {
 }
 
 void stars_render() {
-  if (alarm_clock>0.0) {
-    int r=(int)(alarm_clock*500);
-    if (r>0xff) r=0xff;
-    egg_draw_rect(1,0,0,128,128,(r<<24)|0xff);
-  } else {
-    egg_texture_clear(1);
-  }
+  int r=(int)(alarm_clock*500);
+  if (r>0xff) r=0xff;
+  else if (r<0) r=0;
+  egg_draw_rect(1,0,0,128,128,(r<<24)|0xff);
   struct star *star=starv;
   int i=STAR_COUNT;
   for (;i-->0;star++) {
