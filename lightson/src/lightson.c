@@ -19,6 +19,8 @@ static struct tile_renderer tile_renderer={0};
 static struct font *font=0;
 static struct menu *menu=0;
 int texid_misc=0;
+double total_game_time=0.0;
+double start_real_time=0.0;
  
 void egg_client_quit() {
 }
@@ -60,6 +62,8 @@ int egg_client_init() {
   menu->screenh=screenh;
   menu->tile_renderer=&tile_renderer;
   menu->tilesheet=texid_font_tiles;
+  
+  start_real_time=egg_time_real();
 
   return 0;
 }
@@ -83,6 +87,7 @@ void pop_menu() {
 }
 
 void egg_client_update(double elapsed) {
+  total_game_time+=elapsed;
 
   /* It's wise to poll multiple events at once, more efficient.
    * But you could egg_event_get(&event,1) for legibility too, not a big deal.

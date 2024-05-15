@@ -230,18 +230,13 @@ struct menu *menu_new_audio(struct menu *parent) {
   MENU->songidv[MENU->songidc++]=0; // Keep zero in the song list, "no song" is a valid thing to ask for.
   egg_res_for_each(_audio_cb_res,menu);
   
-  if (
-    (menu_option_add(menu,"Play Song 0",-1)<0)||
-    (menu_option_add(menu,"  Force: false",-1)<0)||
-    (menu_option_add(menu,"  Repeat: true",-1)<0)||
-    (menu_option_add(menu,"Play Sound 0",-1)<0)||
-    (menu_option_add(menu,"  Trim: 99",-1)<0)||
-    (menu_option_add(menu,"  Pan: 0",-1)<0)||
-    (menu_option_add(menu,"Force Playhead to 1.0",-1)<0)||
-  0) {
-    menu_del(menu);
-    return 0;
-  }
+  menu_option_add(menu,"Play Song 0",-1);
+  menu_option_add(menu,"  Force: false",-1);
+  menu_option_add(menu,"  Repeat: true",-1);
+  menu_option_add(menu,"Play Sound 0",-1);
+  menu_option_add(menu,"  Trim: 99",-1);
+  menu_option_add(menu,"  Pan: 0",-1);
+  menu_option_add(menu,"Force Playhead to 1.0",-1);
   
   menu_option_rewrite_tail_int(menu,0,MENU->songidv[0]);
   menu_option_rewrite_tail_int(menu,3,MENU->soundidv[0]);

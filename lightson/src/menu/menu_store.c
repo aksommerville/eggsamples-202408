@@ -4,6 +4,9 @@
 
 static void _store_option(struct menu *menu) {
   switch (menu->optionp) {
+    case 0: menu_new_listres(menu); break;
+    case 1: menu_new_strings(menu); break;
+    case 2: menu_new_persistence(menu); break;
   }
 }
  
@@ -15,14 +18,9 @@ struct menu *menu_new_store(struct menu *parent) {
   menu->render=menu_option_render;
   menu->on_option=_store_option;
   
-  if (
-    (menu_option_add(menu,"List Resources",14)<0)||
-    (menu_option_add(menu,"Strings by Language",19)<0)||
-    (menu_option_add(menu,"Persistence",11)<0)||
-  0) {
-    menu_del(menu);
-    return 0;
-  }
+  menu_option_add(menu,"List Resources",14);
+  menu_option_add(menu,"Strings by Language",19);
+  menu_option_add(menu,"Persistence",11);
   
   return menu;
 }

@@ -279,9 +279,8 @@ struct menu *menu_new_raw(struct menu *parent) {
     MENU->rowh=h>>4;
   }
   if (MENU->rowh<1) {
-    egg_log("menu_raw requires a font or tilesheet");
-    menu_del(menu);
-    return 0;
+    egg_log("!!! menu_raw requires a font or tilesheet !!!");
+    MENU->rowh=1;
   }
   if ((MENU->rowc=menu->screenh/MENU->rowh)<1) MENU->rowc=1;
   

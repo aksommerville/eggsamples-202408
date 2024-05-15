@@ -22,18 +22,13 @@ struct menu *menu_new_input(struct menu *parent) {
   menu->render=menu_option_render;
   menu->on_option=_input_option;
   
-  if (
-    (menu_option_add(menu,"Joystick",8)<0)||
-    (menu_option_add(menu,"Raw Joystick",12)<0)||
-    (menu_option_add(menu,"Keyboard",8)<0)||
-    (menu_option_add(menu,"Mouse",5)<0)||
-    (menu_option_add(menu,"Mouse Lock",10)<0)||
-    (menu_option_add(menu,"Touch",5)<0)||
-    (menu_option_add(menu,"Accelerometer",13)<0)||
-  0) {
-    menu_del(menu);
-    return 0;
-  }
+  menu_option_add(menu,"Joystick",8);
+  menu_option_add(menu,"Raw Joystick",12);
+  menu_option_add(menu,"Keyboard",8);
+  menu_option_add(menu,"Mouse",5);
+  menu_option_add(menu,"Mouse Lock",10);
+  menu_option_add(menu,"Touch",5);
+  menu_option_add(menu,"Accelerometer",13);
   
   return menu;
 }

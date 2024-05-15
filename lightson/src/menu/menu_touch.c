@@ -230,8 +230,6 @@ struct menu *menu_new_touch(struct menu *parent) {
   
   if (egg_texture_load_image(MENU->tilesheet=egg_texture_new(),0,8)<0) {
     egg_log("!!! Failed to load image:0:8");
-    menu_del(menu);
-    return 0;
   }
   
   // TOUCH is enabled by default. We're doing it again in order to check the response.

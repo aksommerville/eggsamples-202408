@@ -19,15 +19,10 @@ struct menu *menu_new_video(struct menu *parent) {
   menu->render=menu_option_render;
   menu->on_option=_video_option;
   
-  if (
-    (menu_option_add(menu,"Primitives",-1)<0)||
-    (menu_option_add(menu,"Transforms",-1)<0)||
-    (menu_option_add(menu,"Too Many Sprites",-1)<0)||
-    (menu_option_add(menu,"Intermediate Framebuffer",-1)<0)||
-  0) {
-    menu_del(menu);
-    return 0;
-  }
+  menu_option_add(menu,"Primitives",-1);
+  menu_option_add(menu,"Transforms",-1);
+  menu_option_add(menu,"Too Many Sprites",-1);
+  menu_option_add(menu,"Intermediate Framebuffer",-1);
   
   return menu;
 }
