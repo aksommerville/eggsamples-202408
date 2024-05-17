@@ -1,0 +1,7 @@
+title=Hard Boiled
+author=AK Sommerville
+timestamp=2024-05-16
+iconImage=1
+
+# Also hard-coded at src/hardboiled.h.
+framebuffer=640x360

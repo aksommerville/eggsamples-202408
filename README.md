@@ -31,6 +31,11 @@ At just a hair over 10 kB, this is about as small as an Egg game can be.
 Also it's not much fun.
 Write something better!
 
+### hardboiled
+
+Point-and-click detective game, culminates in a pretty simple elimination puzzle.
+Using this as the guinea pig for a modal input manager.
+
 ## TODO
 
 - [ ] General utilities.
