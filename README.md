@@ -54,6 +54,8 @@ Using this as the guinea pig for a modal input manager.
 - [ ] Other Wasmable languages: Rust, Go, Zig... Pascal? Fortran?
 - [ ] Client-side rendering in a laughably small framebuffer.
 - [ ] 3d graphics with triangles. I'm really curious how far one can take that. Can I write a StarFox clone?
+- [ ] inkeep: Hide cursor until first event. It's misleading, I catch myself clicking out of the window because the cursor is there in the middle.
+- [ ] malloc.c produces a 16-MB intermediate file. No harm, but can we prevent that?
 
 ## Game Ideas
 

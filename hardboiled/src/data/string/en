@@ -1,0 +1,66 @@
+1 English
+2 Hard Boiled
+
+# The five actions.
+3 Go
+4 Talk
+5 Examine
+6 Open
+7 Exit
+
+8 City Hall
+9 Shoeshine
+10 Newsstand
+11 Police Dept
+12 Warehouse
+13 Nightclub
+14 Park
+15 Docks
+16 Tenement
+
+17 Sgt. O'Malley
+18 Lineup
+19 "\"We arrested seven guys, detective. You got to figure out which one of them done it.\""
+
+20 Mayor
+21 Booze
+22 Pen
+23 Letter
+24 Teacup
+25 "\"900,000 souls out there, detective, and half of them are scoundrels.\""
+26 A bottle of expensive scotch.
+27 An elegant fountain pen.
+28 Draft of an order to city council.
+29 A teacup with a little tea left in it.
+
+30 Jimmy
+31 "\"Word on the street is ...TODO\""
+
+40 Gus
+41 "\"The way I hear it ...TODO\""
+
+50 Viveca
+51 Armando
+52 "\"I don't know a thing about it.\""
+53 "\"Never heard of it.\""
+
+60 Lucy
+61 Millie
+62 Dog
+63 "\"It's so terrible what people do these days, isn't it?\""
+64 "\"Things were so much safer in the old days.\""
+65 The dog does not seem happy about his pink sweater.
+66 "\"Arp arp!\""
+
+70 Charlie
+71 Billy
+72 Bottle
+73 "\"I ain't sayin nothin.\""
+74 "\"Mama said not to talk to cops.\""
+75 An empty wine bottle.
+
+80 Mort
+81 "\"I'd help if I could, detective, but what do I know about crooks?\""
+
+90 Steve
+91 "\"Gimme a reason why I should say anything.\""
