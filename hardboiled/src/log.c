@@ -10,14 +10,17 @@
 #define DSTY 105
 #define DSTW 232
 #define DSTH 27
+#define LOG_TYPEWRITER_TIME 0.050
 
 /* Globals.
  */
  
 static char log_text[1024];
-static int log_textc=0;
+static int log_textc=0; // How much text is there? Updates immediately on sets.
+static int log_printc=0; // How much of it are we displaying right now? 0..log_textc
 static int log_texid=0;
 static int log_texw=0,log_texh=0;
+static double log_clock=0.0; // Counts down to next codepoint out.
 
 /* Eliminate head text through the first newline.
  * No newlines? Eliminate all.
@@ -37,6 +40,7 @@ static void log_drop_head() {
   }
   nlp++; // Eliminate the LF itself too.
   log_textc-=nlp;
+  if ((log_printc-=nlp)<0) log_printc=0;
   memmove(log_text,log_text+nlp,log_textc);
 }
  
@@ -51,6 +55,7 @@ void log_add_text(const char *src,int srcc) {
   if (!log_texid) {
     if ((log_texid=egg_texture_new())<1) {
       log_texid=0;
+      log_printc=0;
       return;
     }
   }
@@ -73,10 +78,12 @@ void log_add_text(const char *src,int srcc) {
   if ((startc<0)||(startc>LINE_COUNT*4)) {
     egg_log("%s:%d: Too many lines of text! (%d)",__FILE__,__LINE__,startc);
     log_textc=0;
+    log_printc=0;
     startc=0;
   } else if (startc>LINE_COUNT) {
     int trimc=startv[startc-LINE_COUNT];
     log_textc-=trimc;
+    if ((log_printc-=trimc)<0) log_printc=0;
     memmove(log_text,log_text+trimc,log_textc);
     memmove(startv,startv+startc-LINE_COUNT,sizeof(int)*LINE_COUNT);
     startc=LINE_COUNT;
@@ -84,8 +91,9 @@ void log_add_text(const char *src,int srcc) {
   
   // The most correct thing, since we've already split the lines, would be to allocate a soft framebuffer, have font render into that, then upload it.
   // That's too much ceremony. So instead we will trust font to break it the same way it did just above, and use the more convenient method.
-  font_render_to_texture(log_texid,font,log_text,log_textc,DSTW,0x000000);
-  egg_texture_get_header(&log_texw,&log_texh,0,log_texid);
+  //XXX Let it pay out via typewriter.
+  //font_render_to_texture(log_texid,font,log_text,log_textc,DSTW,0x000000);
+  //egg_texture_get_header(&log_texw,&log_texh,0,log_texid);
 }
  
 /* Append string resource to log.
@@ -97,6 +105,34 @@ void log_add_string(int stringid) {
   int srcc=text_get_string(&src,stringid);
   if (srcc<1) return;
   log_add_text(src,srcc);
+}
+
+/* Print one more character.
+ */
+ 
+static void log_advance_typewriter() {
+  if (log_printc>=log_textc) return;
+  int codepoint,seqlen;
+  if ((seqlen=text_utf8_decode(&codepoint,log_text+log_printc,log_textc-log_printc))<1) {
+    seqlen=1;
+  }
+  log_printc+=seqlen;
+  font_render_to_texture(log_texid,font,log_text,log_printc,DSTW,0x000000);
+  egg_texture_get_header(&log_texw,&log_texh,0,log_texid);
+}
+
+/* Update.
+ */
+ 
+void log_update(double elapsed) {
+  if (log_printc<log_textc) {
+    if ((log_clock-=elapsed)<0.0) {
+      log_clock+=LOG_TYPEWRITER_TIME;
+      log_advance_typewriter();
+    }
+  } else {
+    log_clock=0.0;
+  }
 }
 
 /* Render.

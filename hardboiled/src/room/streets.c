@@ -68,7 +68,7 @@ static int _streets_name_for_noun(struct room *room,int noun) {
  */
  
 static void _streets_act(struct room *room,int verb,int noun) {
-  egg_log("%s %d %d",__func__,verb,noun);
+  if (verb) return; // Default action only.
   if (noun<1) return;
   int c=sizeof(streets_nounv)/sizeof(streets_nounv[0]);
   if (noun>c) return;

@@ -9,7 +9,7 @@
 #define REGION_LOG 4
 
 static int texid_bg=0;
-static struct room *room=0;
+struct room *room=0;
 static int focus_region=REGION_NONE;
 static int focus_noun=0;
 struct font *font=0;
@@ -84,6 +84,7 @@ int change_room(struct room *(*ctor)()) {
   room=newroom;
   verblist_unselect();
   focus_noun=0;
+  verblist_refresh();
   return 0;
 }
 
@@ -183,6 +184,7 @@ int egg_client_init() {
 
 void egg_client_update(double elapsed) {
   inkeep_update(elapsed);
+  log_update(elapsed);
   if (room&&room->update) room->update(room,elapsed);
 }
 

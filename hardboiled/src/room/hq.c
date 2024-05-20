@@ -55,15 +55,12 @@ static void hq_talk_to_omalley() {
  */
  
 static void _hq_act(struct room *room,int verb,int noun) {
-  egg_log("%s %d %d",__func__,verb,noun);
   switch (noun) {
     case NOUN_OMALLEY: switch (verb) {
         case 0: case VERB_TALK: hq_talk_to_omalley(); break;
-        case VERB_EXAMINE: break;//TODO
       } break;
     case NOUN_LINEUP: switch (verb) {
-        case 0: case VERB_GO: case VERB_OPEN: change_room(room_new_lineup); break;
-        case VERB_EXAMINE: break;//TODO
+        case 0: change_room(room_new_lineup); break;
       } break;
   }
 }

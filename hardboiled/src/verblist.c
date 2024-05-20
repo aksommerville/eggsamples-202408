@@ -9,6 +9,7 @@
 static int texid_buttons=0;
 static int texid_labels[VERB_COUNT]={0};
 int verb_selected=VERB_TALK;
+static int enabled[VERB_COUNT]={0};
 
 /* Init label.
  */
@@ -28,6 +29,7 @@ void verblist_init() {
   egg_texture_load_image(texid_buttons=egg_texture_new(),0,RID_image_button);
   int i=0; for (;i<VERB_COUNT;i++) {
     verblist_init_label(i);
+    enabled[i]=1;
   }
 }
 
@@ -37,14 +39,21 @@ void verblist_init() {
 void verblist_render(int x,int y,int w,int h) {
   int i=0,dsty=y+4;
   for (;i<VERB_COUNT;i++,dsty+=16) {
-    egg_draw_decal(1,texid_buttons,x,dsty,0,(i+1==verb_selected)?15:0,69,15,0);
+    int selected=(i+1==verb_selected);
+    
+    int srcy=0;
+    if (selected) srcy=15;
+    else if (!enabled[i]) srcy=30;
+    egg_draw_decal(1,texid_buttons,x,dsty,0,srcy,69,15,0);
+    
     int lblw=0,lblh=0;
     egg_texture_get_header(&lblw,&lblh,0,texid_labels[i]);
     int lblx=x+(w>>1)-(lblw>>1);
     int lbly=dsty+8-(lblh>>1);
-    if (i+1==verb_selected) egg_render_tint(0xffffffff);
+    if (selected) egg_render_tint(0xffffffff);
+    else if (!enabled[i]) egg_render_tint(0x404040ff);
     egg_draw_decal(1,texid_labels[i],lblx,lbly,0,0,lblw,lblh,0);
-    if (i+1==verb_selected) egg_render_tint(0);
+    if (selected||!enabled[i]) egg_render_tint(0);
   }
 }
 
@@ -67,4 +76,15 @@ void verblist_unselect() {
 
 int verblist_get() {
   return verb_selected;
+}
+
+/* Reassess enablement after room change.
+ */
+ 
+void verblist_refresh() {
+  int i=VERB_COUNT;
+  while (i-->0) {
+    enabled[i]=1;
+  }
+  if (!room||!room->exit) enabled[VERB_EXIT-1]=0;
 }

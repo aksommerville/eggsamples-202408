@@ -10,5 +10,6 @@ void verblist_render(int x,int y,int w,int h);
 void verblist_press(int x,int y);
 void verblist_unselect();
 int verblist_get();
+void verblist_refresh();
 
 #endif

@@ -4,7 +4,7 @@ An Egg game in the style of Deja Vu or Shadowgate.
 
 ## Notes
 
-- [ ] Would it look cool to draw these freehand? And worth the effort?
+- [x] Would it look cool to draw these freehand? And worth the effort? ...yes and yes
 
 ## Rooms
 

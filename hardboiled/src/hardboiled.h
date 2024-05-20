@@ -5,10 +5,10 @@
 #define SCREENH 135
 
 #define VERB_NONE 0
-#define VERB_GO 1
-#define VERB_TALK 2
-#define VERB_EXAMINE 3
-#define VERB_OPEN 4
+#define VERB_TALK 1
+#define VERB_EXAMINE 2
+#define VERB_TAKE 3
+#define VERB_GIVE 4
 #define VERB_EXIT 5
 #define VERB_COUNT 5
 
@@ -20,8 +20,6 @@
 #include "inkeep/inkeep.h"
 #include "resid.h"
 
-extern struct font *font;
-
 struct room {
   void (*del)(struct room *room);
   void (*render)(struct room *room,int x,int y,int w,int h); // (w,h) will always be (96,96)
@@ -31,6 +29,9 @@ struct room {
   void (*act)(struct room *room,int verb,int noun); // (verb) can be zero
   struct room *(*exit)();
 };
+
+extern struct font *font;
+extern struct room *room;
 
 int change_room(struct room *(*ctor)());
 struct room *room_new_title();
@@ -46,6 +47,7 @@ struct room *room_new_docks();
 struct room *room_new_tenement();
 struct room *room_new_lineup();
 
+void log_update(double elapsed);
 void log_render();
 void log_add_text(const char *src,int srcc); // We implicitly add a newline after.
 void log_add_string(int stringid); // Resets verb too.
