@@ -1,0 +1,4 @@
+image nightclub
+exit streets
+noun 3 30 20 66 name=viveca_name wants=0 prestring=viveca_pre poststring=viveca_post
+noun 32 26 22 70 name=armando_name wants=0 prestring=armando_pre poststring=armando_post

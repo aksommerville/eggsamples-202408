@@ -8,59 +8,78 @@
 6 Give
 7 Exit
 
-8 City Hall
-9 Shoeshine
-10 Newsstand
-11 Police Dept
-12 Warehouse
-13 Nightclub
-14 Park
-15 Docks
-16 Tenement
+# Notepad labels.
+8 Items
+9 Clues
 
-17 Sgt. O'Malley
-18 Lineup
-19 "\"We arrested seven guys, detective. You got to figure out which one of them done it.\""
+givenull First pick an item to give.
+unwanted "\"I don't want it.\""
 
-20 Mayor
-21 Booze
-22 Pen
-23 Letter
-24 Teacup
-25 "\"900,000 souls out there, detective, and half of them are scoundrels.\""
-26 A bottle of expensive scotch.
-27 An elegant fountain pen.
-28 Draft of an order to city council.
-29 A teacup with a little tea left in it.
+room_lineup Lineup
+room_cityhall City Hall
+room_shoeshine Shoeshine
+room_newsstand Newsstand
+room_hq Police Dept
+room_warehouse Warehouse
+room_nightclub Nightclub
+room_park Park
+room_docks Docks
+room_tenement Tenement
 
-30 Jimmy
-31 "\"Word on the street is ...TODO\""
+item_booze Booze
+item_pen Pen
+item_letter Letter
+item_teacup Teacup
 
-40 Gus
-41 "\"The way I hear it ...TODO\""
+omalley_name Sgt. O'Malley
+omalley_welcome "\"We arrested seven guys, detective. You got to figure out which one of them done it.\""
 
-50 Viveca
-51 Armando
-52 "\"I don't know a thing about it.\""
-53 "\"Never heard of it.\""
+# TODO Description for takeables. Where will these fit in?
+#26 A bottle of expensive scotch.
+#27 An elegant fountain pen.
+#28 Draft of an order to city council.
+#29 A teacup with a little tea left in it.
 
-60 Lucy
-61 Millie
-62 Dog
-63 "\"It's so terrible what people do these days, isn't it?\""
-64 "\"Things were so much safer in the old days.\""
-65 The dog does not seem happy about his pink sweater.
-66 "\"Arp arp!\""
+mayor_name Mayor
+mayor_pre "\"900,000 souls out there, detective, and half of them are scoundrels.\""
+mayor_post "\"I wish I could tell you more, detective.\""
 
-70 Charlie
-71 Billy
-72 Bottle
-73 "\"I ain't sayin nothin.\""
-74 "\"Mama said not to talk to cops.\""
-75 An empty wine bottle.
+jimmy_name Jimmy
+jimmy_pre "\"Word on the street is ...TODO\""
 
-80 Mort
-81 "\"I'd help if I could, detective, but what do I know about crooks?\""
+gus_name Gus
+gus_pre "\"Nothing's free, pal. What can you do for me?\""
+gus_post "\"That's all I got.\""
 
-90 Steve
-91 "\"Gimme a reason why I should say anything.\""
+viveca_name Viveca
+viveca_pre "\"I don't know a thing about it.\""
+viveca_post "\"What more do you want from me, detective?\""
+armando_name Armando
+armando_pre "\"Never heard of it.\""
+armando_post "\"I told you already.\""
+
+lucy_name Lucy
+lucy_pre "\"I wouldn't know about that.\""
+lucy_post "\"I've already told you everything.\""
+millie_name Millie
+millie_pre "\"I wish I could write my sister in more elegant style.\""
+millie_post "\"I don't know anything else about it.\""
+dog_name Dog
+dog_pre The dog does not seem happy about his pink sweater.
+
+charlie_name Charlie
+charlie_pre "\"I ain't sayin nothin.\""
+charlie_post "\"That's all I know.\""
+billy_name Billy
+billy_pre "\"Mama said not to talk to cops.\""
+billy_post "\"I don't know anything else.\""
+bottle_name Bottle
+bottle_text An empty wine bottle.
+
+mort_name Mort
+mort_pre "\"I'd help if I could, detective, but what do I know about crooks?\""
+mort_post "\"That's all I know.\""
+
+steve_name Steve
+steve_pre "\"Gimme a reason why I should say anything.\""
+steve_post "\"I already told you.\""

@@ -18,38 +18,25 @@
 #include "util/text.h"
 #include "util/tile_renderer.h"
 #include "inkeep/inkeep.h"
+#include "room.h"
 #include "resid.h"
 
-struct room {
-  void (*del)(struct room *room);
-  void (*render)(struct room *room,int x,int y,int w,int h); // (w,h) will always be (96,96)
-  void (*update)(struct room *room,double elapsed);
-  int (*noun_for_point)(struct room *room,int x,int y); // (x,y) in (0,0)..(95,95), return noun or 0
-  int (*name_for_noun)(struct room *room,int noun); // string id
-  void (*act)(struct room *room,int verb,int noun); // (verb) can be zero
-  struct room *(*exit)();
-};
-
 extern struct font *font;
-extern struct room *room;
+extern struct room *current_room;
 
-int change_room(struct room *(*ctor)());
-struct room *room_new_title();
-struct room *room_new_hq();
-struct room *room_new_streets();
-struct room *room_new_cityhall();
-struct room *room_new_shoeshine();
-struct room *room_new_newsstand();
-struct room *room_new_warehouse();
-struct room *room_new_nightclub();
-struct room *room_new_park();
-struct room *room_new_docks();
-struct room *room_new_tenement();
-struct room *room_new_lineup();
+int change_room(int rid);
+void set_focus_noun(int f);
 
 void log_update(double elapsed);
 void log_render();
 void log_add_text(const char *src,int srcc); // We implicitly add a newline after.
 void log_add_string(int stringid); // Resets verb too.
+
+int inv_get(int stringid); // => (0,1,2) = (untouched,have,given away)
+void inv_set(int stringid,int has);
+void inventory_press(int x,int y);
+extern int inventory_sequence; // Increments whenever the global inventory changes.
+void inventory_render();
+extern int selected_item; // stringid or zero
 
 #endif

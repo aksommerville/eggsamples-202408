@@ -1,0 +1,7 @@
+image cityhall
+exit streets
+noun 32 4 26 64 name=mayor_name wants=0 prestring=mayor_pre poststring=mayor_post
+noun 9 14 11 9 name=item_booze takeable=0,96
+noun 8 66 15 6 name=item_pen takeable=11,96
+noun 22 88 17 8 name=item_teacup takeable=55,96
+noun 3 70 29 21 name=item_letter takeable=26,96

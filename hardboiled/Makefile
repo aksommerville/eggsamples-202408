@@ -41,6 +41,7 @@ AR_NATIVE:=ar rc
 # Rules to generate data files.
 # It's normal to have just the one `cp` (in which case a lot of the "DATA" stuff below is redundant).
 $(MIDDIR)/data/%:src/data/%;$(PRECMD) cp $< $@
+$(MIDDIR)/data/room/%:src/data/room/% etc/tool/room.js $(DATAHEADER);$(PRECMD) node etc/tool/room.js -o$@ $< --header=$(DATAHEADER)
 
 # Can add `--external` to serve on external interfaces, eg to test on your phone. Don't leave that on.
 serve:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/www
@@ -56,9 +57,8 @@ DATAFILES_MID:=$(patsubst src/data/%,$(MIDDIR)/data/%,$(DATAFILES))
 DATAFLAG:=$(MIDDIR)/dataflag
 DATAHEADER:=$(MIDDIR)/resid.h
 $(shell $(EGGDEV) tocflag -o$(DATAFLAG) src/data --types=src/restypes)
-$(DATAHEADER):$(DATAFLAG) $(wildcard src/data/string/* src/data/sound/*) \
-  ;$(PRECMD) rm -f $@ ; $(EGGDEV) toc src/data --named-only --types=src/restypes \
-  | while read TID QUAL RID NAME ; do echo "#define RID_$${TID}_$${NAME} $${RID}" >>$@ ; done >>$@
+$(DATAHEADER):$(DATAFLAG) $(wildcard src/data/string/* src/data/sound/*) etc/tool/genhdr.js \
+  ;$(PRECMD) $(EGGDEV) toc src/data --named-only --types=src/restypes | node etc/tool/genhdr.js -o$@ --types=src/restypes
 
 OFILES_WASM:=$(patsubst src/%.c,$(MIDDIR)/wasm/%.o,$(CFILES))
 OFILES_NATIVE:=$(patsubst src/%.c,$(MIDDIR)/native/%.o,$(filter-out src/stdlib/%,$(CFILES)))

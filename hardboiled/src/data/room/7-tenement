@@ -1,0 +1,5 @@
+image tenement
+exit streets
+noun 26 42 16 38 name=charlie_name wants=item_booze prestring=charlie_pre poststring=charlie_post
+noun 68 64 12 32 name=billy_name wants=0 prestring=billy_pre poststring=billy_post
+noun 3 89 18 4 name=bottle_name prestring=bottle_text

@@ -9,7 +9,7 @@
 #define REGION_LOG 4
 
 static int texid_bg=0;
-struct room *room=0;
+struct room *current_room=0;
 static int focus_region=REGION_NONE;
 static int focus_noun=0;
 struct font *font=0;
@@ -20,11 +20,10 @@ void egg_client_quit() {
   inkeep_quit();
 }
 
-static void focus_noun_changed() {
-  int stringid=0;
-  if (focus_noun&&room&&room->name_for_noun) {
-    stringid=room->name_for_noun(room,focus_noun);
-  }
+void set_focus_noun(int f) {
+  if (f==focus_noun) return;
+  focus_noun=f;
+  int stringid=room_name_for_noun(current_room,focus_noun);
   const char *src=0;
   int srcc=text_get_string(&src,stringid);
   if (srcc<0) srcc=0;
@@ -51,37 +50,22 @@ static void refresh_focus_noun(int x,int y) {
     int subx=x-72;
     int suby=y-3;
     if ((subx<0)||(suby<0)||(subx>=96)||(suby>=96)) {
-      if (focus_noun) {
-        focus_noun=0;
-        focus_noun_changed();
-      }
+      set_focus_noun(0);
     } else {
-      int nnoun=0;
-      if (room&&room->noun_for_point) {
-        nnoun=room->noun_for_point(room,subx,suby);
-        if (nnoun<0) nnoun=0;
-      }
-      if (nnoun!=focus_noun) {
-        focus_noun=nnoun;
-        focus_noun_changed();
-      }
+      set_focus_noun(room_noun_for_point(current_room,subx,suby));
     }
-  } else {
-    if (focus_noun) {
-      focus_noun=0;
-      focus_noun_changed();
-    }
+  } else { // TODO Inventory list.
+    set_focus_noun(0);
   }
 }
 
-int change_room(struct room *(*ctor)()) {
-  struct room *newroom=ctor();
-  if (!newroom) return -1;
-  if (room) {
-    if (room->del) room->del(room);
-    free(room);
+int change_room(int rid) {
+  if (rid) {
+    struct room *newroom=room_new(rid);
+    if (!newroom) return -1;
+    room_del(current_room);
+    current_room=newroom;
   }
-  room=newroom;
   verblist_unselect();
   focus_noun=0;
   verblist_refresh();
@@ -108,19 +92,19 @@ static void cb_touch(int state,int x,int y,void *userdata) {
         refresh_focus_noun(x,y);
         switch (focus_region) {
           case REGION_ROOM: {
-              if (room&&room->act) {
-                room->act(room,verblist_get(),focus_noun);
+              if (room_act(current_room,verblist_get(),focus_noun)) {
+                verblist_unselect();
+                refresh_focus_noun(x,y);
               }
             } break;
           case REGION_VERBS: {
               verblist_press(x-170,y-1);
               if (verblist_get()==VERB_EXIT) {
-                if (room&&room->exit) {
-                  change_room(room->exit);
-                }
-                verblist_unselect();
-                focus_noun=0;
+                change_room(room_get_exit(current_room));
               }
+            } break;
+          case REGION_NOTEPAD: {
+              inventory_press(x,y);
             } break;
         }
       } break;
@@ -177,7 +161,7 @@ int egg_client_init() {
   inkeep_listen_all(cb_raw,0,cb_text,cb_touch,0,0,/*cb_mmotion,cb_mbutton,*/0,0,0,0);
   
   verblist_init();
-  if (change_room(room_new_title)<0) return -1;
+  if (change_room(1)<0) return -1;
   
   return 0;
 }
@@ -185,20 +169,17 @@ int egg_client_init() {
 void egg_client_update(double elapsed) {
   inkeep_update(elapsed);
   log_update(elapsed);
-  if (room&&room->update) room->update(room,elapsed);
+  room_update(current_room,elapsed);
 }
 
 void egg_client_render() {
-  if (room&&room->render) {
-    room->render(room,72,3,96,96);
-  } else {
-    egg_draw_rect(1,72,3,96,96,0x808080ff);
-  }
+  room_render(current_room,72,3,96,96);
   egg_draw_decal(1,texid_bg,0,0,0,0,SCREENW,SCREENH,0);
   verblist_render(170,1,69,85);
   if (focus_noun) {
     egg_draw_decal(1,texid_focus_noun,174,90,0,0,texid_focus_noun_w,texid_focus_noun_h,0);//TODO really need a default (w,h) for "the whole thing"
   }
   log_render();
+  inventory_render();
   inkeep_render();
 }

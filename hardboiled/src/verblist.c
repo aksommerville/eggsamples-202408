@@ -61,6 +61,7 @@ void verblist_render(int x,int y,int w,int h) {
  */
  
 void verblist_press(int x,int y) {
+  selected_item=0;
   int verb=(y-4)/16+1;
   if ((verb<1)||(verb>VERB_COUNT)) return;
   if (verb==verb_selected) {
@@ -72,6 +73,7 @@ void verblist_press(int x,int y) {
 
 void verblist_unselect() {
   verb_selected=0;
+  selected_item=0;
 }
 
 int verblist_get() {
@@ -86,5 +88,5 @@ void verblist_refresh() {
   while (i-->0) {
     enabled[i]=1;
   }
-  if (!room||!room->exit) enabled[VERB_EXIT-1]=0;
+  if (!room_get_exit(current_room)) enabled[VERB_EXIT-1]=0;
 }

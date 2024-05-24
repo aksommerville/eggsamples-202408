@@ -1,0 +1,4 @@
+image shoeshine
+exit streets
+noun 47 12 21 59 name=jimmy_name wants=0 prestring=jimmy_pre poststring=0
+#TODO Jimmy isn't a witness; he gives clues about other witnesses

@@ -1,0 +1,4 @@
+image hq
+exit streets
+noun 10 5 25 91 name=omalley_name prestring=omalley_welcome
+noun 57 13 37 66 name=room_lineup go=lineup

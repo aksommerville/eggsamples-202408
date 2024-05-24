@@ -1,0 +1,3 @@
+image warehouse
+exit streets
+noun 55 14 20 82 name=mort_name wants=0 prestring=mort_pre poststring=mort_post
