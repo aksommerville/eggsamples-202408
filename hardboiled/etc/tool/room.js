@@ -109,6 +109,7 @@ function noun(words) {
   let wants = null;
   let prestring = null;
   let poststring = null;
+  let talk = null;
   for (let i=5; i<words.length; i++) {
     const [k, v] = words[i].split('=');
     switch (k) {
@@ -122,6 +123,7 @@ function noun(words) {
       case "wants": wants = evalRid(v, "string"); break;
       case "prestring": prestring = evalRid(v, "string"); break;
       case "poststring": poststring = evalRid(v, "string"); break;
+      case "talk": talk = v; break;
     }
   }
   
@@ -154,6 +156,13 @@ function noun(words) {
     append16(wants || 0);
     append16(poststring || 0);
     return;
+  }
+  
+  if (talk) {
+    switch (talk) {
+      case "gossip": prefix(0x08, true); append16(1); return;
+    }
+    throw new Error(`Unknown 'talk' arg ${JSON.stringify(talk)}, expected one of: 'gossip'`);
   }
   
   // "door" with a zero makes an inert noun.

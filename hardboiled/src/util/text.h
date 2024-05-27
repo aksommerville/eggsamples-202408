@@ -25,6 +25,7 @@ int text_init();
 /* Get a string resource in the global language.
  * Content is cached, so we return it WEAK.
  * Don't free or modify, and stop using if you change language.
+ * Safely returns the empty string for any errors, never negative.
  */
 int text_get_string(const char **v,int stringid);
 

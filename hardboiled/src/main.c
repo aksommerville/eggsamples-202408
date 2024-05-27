@@ -87,9 +87,14 @@ static void cb_text(int codepoint,void *userdata) {
 }
 
 static void cb_touch(int state,int x,int y,void *userdata) {
-  switch (state) {
+  if (popup_is_popped()) {
+    set_focus_noun(0);
+    switch (state) {
+      case EGG_TOUCH_BEGIN: popup_touch(x,y); break;
+    }
+  } else switch (state) {
     case EGG_TOUCH_BEGIN: {
-        refresh_focus_noun(x,y);
+       refresh_focus_noun(x,y);
         switch (focus_region) {
           case REGION_ROOM: {
               if (room_act(current_room,verblist_get(),focus_noun)) {
@@ -183,5 +188,6 @@ void egg_client_render() {
   }
   log_render();
   inventory_render();
+  popup_render();
   inkeep_render();
 }

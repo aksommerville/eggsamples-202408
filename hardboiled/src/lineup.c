@@ -1,16 +1,47 @@
 #include "hardboiled.h"
+#include "verblist.h"
 
 /* Globals.
  * By rights, these ought to live in struct room, but whatever, we know there's just one room at a time.
  */
  
 #define LINEUP_WIDTH (SUSPECT_COUNT*48)
-#define SCROLL_LIMIT (LINEUP_WIDTH-96)
+#define SCROLL_LIMIT (LINEUP_WIDTH-48)
  
 static int eyes1=0,eyes2=0;
 static int eyesclock=0;
 static int scroll=0; // in framebuffer pixels, 0..SCROLL_LIMIT
 static int dscroll=0; // -1,0,1
+static int lineup_query_suspect=-1; // 0..SUSPECT_COUNT-1, if the confirmation modal is up
+
+/* Confirmation modal responses.
+ */
+ void log_rand_seed();
+ 
+static void lineup_play_again() {
+  scroll=0;
+  inv_reset();
+  log_clear();
+  verblist_init();
+  puzzle_init();
+  change_room(1);
+}
+ 
+static void lineup_confirm_arrest() {
+  if ((lineup_query_suspect>=0)&&(lineup_query_suspect<SUSPECT_COUNT)) {
+    int guiltyp=puzzle_get_guilty_index();
+    if (lineup_query_suspect==guiltyp) {
+      popup_present(RID_string_prompt_success,RID_string_opt_again,0,lineup_play_again,0);
+    } else {
+      popup_present(RID_string_prompt_failure,RID_string_opt_again,0,lineup_play_again,0);
+    }
+  }
+  lineup_query_suspect=-1;
+}
+
+static void lineup_cancel_arrest() {
+  lineup_query_suspect=-1;
+}
 
 /* Act.
  */
@@ -28,9 +59,10 @@ int lineup_act(struct room *room,int verb,int nounid) {
     x-=72;
     y-=3;
     if ((x>0)&&(x<96)&&(y>0)&&(y<70)) {
-      int suspectp=(x+scroll)/48;
+      int suspectp=scroll/48;
       if ((suspectp>=0)&&(suspectp<SUSPECT_COUNT)) {
-        egg_log("TODO Arrest suspect %d",suspectp);// will require confirmation
+        lineup_query_suspect=suspectp;
+        popup_present(RID_string_prompt_arrest,RID_string_opt_yes,RID_string_opt_no,lineup_confirm_arrest,lineup_cancel_arrest);
       }
     }
   }
@@ -63,8 +95,8 @@ static void draw_suspect(struct room *room,int x,int y,int hair,int shirt,int ti
   }
   
   switch (hair) {
-    case 0: egg_draw_decal(1,room->texid,x,y+13,96,58,40,17,0); break;
-    case 1: egg_draw_decal(1,room->texid,x,y+13,96,75,40,17,0); break;
+    case 0: egg_draw_decal(1,room->texid,x,y+13,96,75,40,17,0); break;
+    case 1: egg_draw_decal(1,room->texid,x,y+13,96,58,40,17,0); break;
     case 2: break;
   }
 }
@@ -90,9 +122,10 @@ void lineup_render(struct room *room,int x,int y,int w,int h) {
     eyesclock=80+rand()%100;
   }
   
-  int dstx=-scroll%48;
-  int suspectp=scroll/48;
+  int dstx=-(scroll-24)%48;
+  int suspectp=(scroll-24)/48;
   for (;dstx<96;dstx+=48,suspectp++) {
+    if (suspectp>=SUSPECT_COUNT) break;
     int hair=0,shirt=0,tie=0;
     puzzle_get_suspect(&hair,&shirt,&tie,suspectp);
     draw_suspect(room,x+dstx,y,hair,shirt,tie,(suspectp&1)?eyes1:eyes2);

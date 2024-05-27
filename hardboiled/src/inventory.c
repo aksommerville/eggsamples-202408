@@ -24,6 +24,16 @@ static int clue_bits=0; // 1<<field, which have we seen so far
 
 /* Public accessors.
  */
+
+void inv_reset() {
+  invc=0;
+  inv_donec=0;
+  selected_tab=0;
+  selected_item=0;
+  clue_bits=0;
+  clue_textc=0;
+  inventory_sequence++;
+}
  
 int inv_get(int stringid) {
   const int *v=invv;
@@ -71,6 +81,25 @@ void inventory_show_items() {
   if (selected_tab==0) return;
   selected_tab=0;
   inventory_sequence++;
+}
+
+int clues_count() {
+  int c=0;
+  unsigned int v=clue_bits;
+  for (;v;v>>=1) if (v&1) c++;
+  return c;
+}
+
+int inv_get_present(int p) {
+  if (p<0) return 0;
+  if (p>=invc) return 0;
+  return invv[p];
+}
+
+int inv_get_given(int p) {
+  if (p<0) return 0;
+  if (p>=inv_donec) return 0;
+  return inv_donev[p];
 }
 
 /* Add a clue.

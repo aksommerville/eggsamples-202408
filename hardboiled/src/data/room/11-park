@@ -1,6 +1,6 @@
 image park
 exit streets
-noun 21 30 14 43 name=lucy_name wants=0 prestring=lucy_pre poststring=lucy_post
+noun 21 30 14 43 name=lucy_name wants=item_gab prestring=lucy_pre poststring=lucy_post
 noun 61 33 13 28 name=millie_name wants=item_pen prestring=millie_pre poststring=millie_post
 noun 39 74 13 10 name=dog_name wants=0 prestring=dog_pre poststring=0
-#TODO Dog should have separate "Examine" and "Talk" actions, and he's static.
+noun 27 11 7 8 name=item_apple takeable=0,96

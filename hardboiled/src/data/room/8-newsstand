@@ -1,3 +1,5 @@
 image newsstand
 exit streets
 noun 27 26 19 32 name=gus_name wants=item_letter prestring=gus_pre poststring=gus_post
+noun 21 62 18 21 takeable=0,96 name=item_gab
+noun 54 57 19 24 takeable=18,96 name=item_glam

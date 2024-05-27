@@ -3,6 +3,7 @@
 
 void lineup_render(struct room *room,int x,int y,int w,int h);
 int lineup_act(struct room *room,int verb,int nounid);
+void jimmy_talk();
 
 /* Delete.
  */
@@ -127,6 +128,19 @@ static int room_decode(struct room *room,const uint8_t *src,int srcc) {
       case 0x07: { // special: 0x07 u8:v (ROOM_SPECIAL_*)
           REQUIRE(1);
           room->special=RD8;
+        } break;
+        
+      case 0x08: { // talk: 0x08 u8:x u8:y u8:w u8:h u16:name u16:id(ROOM_TALK_*)
+          REQUIRE(8)
+          uint8_t x=RD8;
+          uint8_t y=RD8;
+          uint8_t w=RD8;
+          uint8_t h=RD8;
+          uint16_t name=RD16;
+          uint16_t talk=RD16;
+          struct noun *noun=room_add_noun(room,x,y,w,h,name);
+          if (!noun) return -1;
+          noun->talk=talk;
         } break;
       
       #undef REQUIRE
@@ -254,6 +268,17 @@ static int room_act_on_witness(struct room *room,int verb,const struct noun *nou
   return 0;
 }
 
+/* Special talk handlers.
+ */
+ 
+void talk_gossip();
+ 
+static void talk_special(uint16_t id) {
+  switch (id) {
+    case ROOM_TALK_GOSSIP: talk_gossip(); break;
+  }
+}
+
 /* Act.
  */
  
@@ -270,6 +295,13 @@ int room_act(struct room *room,int verb,int nounid) {
   nounid--;
   if (nounid>=room->nounc) return room_act_nounless(room,verb);
   struct noun *noun=room->nounv+nounid;
+  
+  // If (talk) set, and verb is NONE or TALK, call out to the special handler.
+  if (noun->talk) {
+    switch (verb) {
+      case VERB_NONE: case VERB_TALK: talk_special(noun->talk); return 1;
+    }
+  }
   
   // If (roomid) set, it's a simple door.
   if (noun->roomid) {

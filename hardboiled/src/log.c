@@ -22,6 +22,15 @@ static int log_texid=0;
 static int log_texw=0,log_texh=0;
 static double log_clock=0.0; // Counts down to next codepoint out.
 
+/* Clear text.
+ */
+ 
+void log_clear() {
+  log_textc=0;
+  log_printc=0;
+  egg_texture_clear(log_texid);
+}
+
 /* Eliminate head text through the first newline.
  * No newlines? Eliminate all.
  */

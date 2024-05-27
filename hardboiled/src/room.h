@@ -8,7 +8,7 @@
  *   image NAME # 1
  *   song NAME # 0|1
  *   exit NAME # room; 0|1
- *   noun X Y W H [name=STRINGID] [go=ROOMID] [takeable=SRCX,SRCY] [prestring=STRINGID [wants=STRINGID poststring=STRINGID]]
+ *   noun X Y W H [name=STRINGID] [go=ROOMID] [takeable=SRCX,SRCY] [prestring=STRINGID [wants=STRINGID poststring=STRINGID]] [talk=gossip]
  *   special lineup
  *
  * DATA FORMAT, BINARY:
@@ -20,6 +20,7 @@
  *   takeable: 0x05 u8:dstx u8:dsty u8:w u8:h u16:name u16:srcx u16:srcy
  *   witness:  0x06 u8:x u8:y u8:w u8:h u16:name u16:prestring u16:itemstring u16:poststring
  *   special:  0x07 u8:v (ROOM_SPECIAL_*)
+ *   talk:     0x08 u8:x u8:y u8:w u8:h u16:name u16:id(ROOM_TALK_*)
  *
  * If noun regions overlap, the first one wins.
  * Rule of thumb: Put smaller things first.
@@ -32,6 +33,7 @@
 /* Some rooms have extra logic tacked on, things I didn't bother figuring out how to generalize.
  */
 #define ROOM_SPECIAL_LINEUP 1
+#define ROOM_TALK_GOSSIP 1
 
 /* "noun" is anything that occupies screen space in a room.
  * If it has a name, that name is displayed when the cursor hovers.
@@ -43,6 +45,7 @@ struct noun {
   uint16_t roomid; // If nonzero, clicking here navigates to another room.
   uint16_t inv_srcx,inv_srcy; // If (inv_srcy) nonzero, this is a takeable inventory item, keyed by (name).
   uint16_t wants,prestring,poststring; // (prestring) alone for static text. (wants,poststring) for appeasable witnesses.
+  uint16_t talk;
 };
 
 struct room {

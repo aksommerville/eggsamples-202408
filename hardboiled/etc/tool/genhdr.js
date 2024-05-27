@@ -63,9 +63,12 @@ function composeFile(src) {
 
 let src = "";
 process.stdin.on("readable", () => {
-  const intake = process.stdin.read(1024);
-  if (!intake) return;
-  src += intake.toString("utf8");
+  for (;;) {
+    const intake = process.stdin.read(1024);
+    if (!intake) return;
+    src += intake.toString("utf8");
+    if (intake.length < 1024) break;
+  }
 });
 process.stdin.on("end", () => {
   const dst = composeFile(src);

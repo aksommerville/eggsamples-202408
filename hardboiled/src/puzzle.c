@@ -75,6 +75,44 @@ static void clue_init_random(int fieldid) {
     return;
   }
 }
+
+/* After the initial suspect creation, it is entirely possible for duplicates to exist.
+ * There's 27 possible suspects and we're using 7 of them.
+ * Search for duplicates and reassign one field on one of them until the set is unique.
+ * In theory, this operation is open-ended and could run forever.
+ * Because the numbers aren't truly random, I'm sure there is a mathematically provable limit.
+ * But I won't dive into that... Just include a sanity limit, and eventually give up and let the set have duplicates.
+ */
+ 
+static void force_unique_suspects() {
+  int limit=100;
+ _again_:;
+  if (--limit<0) {
+    return;
+  }
+  int ai=SUSPECT_COUNT;
+  while (ai-->1) {
+    struct suspect *a=suspectv+ai;
+    int bi=ai;
+    while (bi-->0) {
+      struct suspect *b=suspectv+bi;
+      if (!memcmp(a,b,sizeof(struct suspect))) {
+        uint8_t *fld;
+        switch (rand()%6) {
+          case 0: fld=a->v+0; break;
+          case 1: fld=a->v+1; break;
+          case 2: fld=a->v+2; break;
+          case 3: fld=b->v+0; break;
+          case 4: fld=b->v+1; break;
+          default: fld=b->v+2; break;
+        }
+        (*fld)++;
+        if (*fld>=3) *fld=0;
+        goto _again_;
+      }
+    }
+  }
+}
  
 /* Init.
  */
@@ -104,6 +142,8 @@ void puzzle_init() {
       if (*v>2) *v=rand()%3;
     }
   }
+  
+  force_unique_suspects();
   
   /* Who done it?
    */
@@ -193,4 +233,8 @@ void puzzle_get_suspect(int *hair,int *shirt,int *tie,int suspectp) {
     *shirt=suspect->v[1];
     *tie=suspect->v[2];
   }
+}
+
+int puzzle_get_guilty_index() {
+  return guiltyp;
 }

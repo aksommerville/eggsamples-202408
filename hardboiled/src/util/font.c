@@ -241,6 +241,15 @@ int font_render_to_texture(int texid,const struct font *font,const char *src,int
       startv[1]=srcc;
       startc=1;
     } else startv[startc]=srcc;
+    // Now remeasure each line and find the minimum width.
+    wlimit=1;
+    int i=0; for (;i<startc;i++) {
+      const char *line=src+startv[i];
+      int linec=startv[i+1]-startv[i];
+      while (linec&&((unsigned char)line[linec-1]<=0x20)) linec--;
+      int w1=font_measure(font,line,linec);
+      if (w1>wlimit) wlimit=w1;
+    }
   } else {
     startv[0]=0;
     startv[1]=srcc;
