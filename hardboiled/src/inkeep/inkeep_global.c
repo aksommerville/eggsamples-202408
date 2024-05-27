@@ -268,3 +268,11 @@ int inkeep_set_mode(int mode) {
   }
   return inkeep.mode;
 }
+
+/* Trivial accessors.
+ */
+ 
+void inkeep_get_mouse(int *x,int *y) {
+  if (x) *x=inkeep.mousex;
+  if (y) *y=inkeep.mousey;
+}

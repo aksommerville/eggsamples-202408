@@ -68,12 +68,17 @@ void verblist_press(int x,int y) {
     verb_selected=0;
   } else {
     verb_selected=verb;
+    if (verb==VERB_GIVE) inventory_show_items();
   }
 }
 
 void verblist_unselect() {
   verb_selected=0;
   selected_item=0;
+}
+
+void verblist_set(int verb) {
+  verb_selected=verb;
 }
 
 int verblist_get() {

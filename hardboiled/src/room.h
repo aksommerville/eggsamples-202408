@@ -9,6 +9,7 @@
  *   song NAME # 0|1
  *   exit NAME # room; 0|1
  *   noun X Y W H [name=STRINGID] [go=ROOMID] [takeable=SRCX,SRCY] [prestring=STRINGID [wants=STRINGID poststring=STRINGID]]
+ *   special lineup
  *
  * DATA FORMAT, BINARY:
  *   eof:      0x00
@@ -18,6 +19,7 @@
  *   door:     0x04 u8:x u8:y u8:w u8:h u16:name u16:go
  *   takeable: 0x05 u8:dstx u8:dsty u8:w u8:h u16:name u16:srcx u16:srcy
  *   witness:  0x06 u8:x u8:y u8:w u8:h u16:name u16:prestring u16:itemstring u16:poststring
+ *   special:  0x07 u8:v (ROOM_SPECIAL_*)
  *
  * If noun regions overlap, the first one wins.
  * Rule of thumb: Put smaller things first.
@@ -26,6 +28,10 @@
  
 #ifndef ROOM_H
 #define ROOM_H
+
+/* Some rooms have extra logic tacked on, things I didn't bother figuring out how to generalize.
+ */
+#define ROOM_SPECIAL_LINEUP 1
 
 /* "noun" is anything that occupies screen space in a room.
  * If it has a name, that name is displayed when the cursor hovers.
@@ -47,6 +53,7 @@ struct room {
   int texid;
   struct noun *nounv;
   int nounc,nouna;
+  int special;
 };
 
 void room_del(struct room *room);

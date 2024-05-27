@@ -161,6 +161,17 @@ function noun(words) {
   append16(0);
 }
 
+function special(words) {
+  if (words.length !== 2) throw new Error(`'special' takes exactly one argument`);
+  let v = 0;
+  switch (words[1]) {
+    case "lineup": v = 1; break;
+  }
+  if (!v) throw new Error(`Unknown 'special' room: ${JSON.stringify(words[1])}`);
+  append8(0x07);
+  append8(v);
+}
+
 const src = fs.readFileSync(srcpath);
 for (let srcp=0, lineno=1; srcp<src.length; lineno++) {
   let nextp = src.indexOf(0x0a, srcp);
@@ -177,6 +188,7 @@ for (let srcp=0, lineno=1; srcp<src.length; lineno++) {
       case "song": singleRid(words, 0x02, "song"); break;
       case "exit": singleRid(words, 0x03, "room"); break;
       case "noun": noun(words); break;
+      case "special": special(words); break;
     
       default: throw new Error(`Unexpected command ${JSON.stringify(words[0])}`);
     }

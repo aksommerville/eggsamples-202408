@@ -12,6 +12,31 @@
 8 Items
 9 Clues
 
+# Clue, long form: 10+field*3+value
+10 "\"His hair is brown.\""
+11 "\"His hair is blond.\""
+12 "\"He is bald.\""
+13 "\"He's wearing a blue shirt.\""
+14 "\"He's wearing a green shirt.\""
+15 "\"He's wearing a red shirt.\""
+16 "\"He's not wearing a tie.\""
+17 "\"He's wearing a necktie.\""
+18 "\"He's wearing a bowtie.\""
+
+# Clue, short form: 19+field*3+value
+19 Brown hair
+20 Blond hair
+21 Bald
+22 Blue shirt
+23 Green shirt
+24 Red shirt
+25 No tie
+26 Necktie
+27 Bowtie
+
+btn_left Left
+btn_right Right
+
 givenull First pick an item to give.
 unwanted "\"I don't want it.\""
 

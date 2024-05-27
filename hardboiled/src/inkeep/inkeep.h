@@ -50,6 +50,8 @@ int inkeep_init();
 void inkeep_update(double elapsed);
 void inkeep_render();
 
+void inkeep_get_mouse(int *x,int *y);
+
 /* Setup.
  * You can change things at any time.
  * Most of these, it's typical to set just once right after init.

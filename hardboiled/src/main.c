@@ -161,6 +161,8 @@ int egg_client_init() {
   inkeep_listen_all(cb_raw,0,cb_text,cb_touch,0,0,/*cb_mmotion,cb_mbutton,*/0,0,0,0);
   
   verblist_init();
+  srand_auto();
+  puzzle_init();
   if (change_room(1)<0) return -1;
   
   return 0;

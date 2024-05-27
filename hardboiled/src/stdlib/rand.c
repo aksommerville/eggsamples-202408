@@ -23,7 +23,7 @@ void srand(int seed) {
 
 void srand_auto() {
   double now=egg_time_real();
-  int seed=(int)(now*1000.0); // Don't assume that we get finer than millisecond precision from the clock.
+  int seed=(int)now;
   int mixer=65521;
   for (;;) {
     int onec=0;

@@ -1,2 +1,6 @@
 image lineup
 exit hq
+special lineup
+# Lineup room nouns, the order is hard-coded. Don't change order here.
+noun 10 77 15 15 name=btn_left
+noun 71 77 15 15 name=btn_right

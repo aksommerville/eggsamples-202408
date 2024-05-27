@@ -1,6 +1,9 @@
 #include "hardboiled.h"
 #include "verblist.h"
 
+void lineup_render(struct room *room,int x,int y,int w,int h);
+int lineup_act(struct room *room,int verb,int nounid);
+
 /* Delete.
  */
  
@@ -120,6 +123,11 @@ static int room_decode(struct room *room,const uint8_t *src,int srcc) {
           noun->prestring=pre;
           noun->poststring=post;
         } break;
+        
+      case 0x07: { // special: 0x07 u8:v (ROOM_SPECIAL_*)
+          REQUIRE(1);
+          room->special=RD8;
+        } break;
       
       #undef REQUIRE
       #undef RD8
@@ -204,6 +212,14 @@ static int room_act_on_witness(struct room *room,int verb,const struct noun *nou
   if (haveitem==0) { // Not yet sated, or static text only.
     switch (verb) {
       case VERB_NONE: case VERB_TALK: log_add_string(noun->prestring); return 1;
+      case VERB_GIVE: {
+          if (!selected_item) {
+            log_add_string_keep_verb(RID_string_givenull);
+            return 0;
+          }
+          log_add_string(RID_string_unwanted);
+          return 0;
+        }
     }
     return 0;
   }
@@ -221,7 +237,7 @@ static int room_act_on_witness(struct room *room,int verb,const struct noun *nou
     case VERB_NONE: case VERB_TALK: log_add_string(noun->prestring); return 1;
     case VERB_GIVE: {
         if (!selected_item) {
-          log_add_string(RID_string_givenull);
+          log_add_string_keep_verb(RID_string_givenull);
           return 0;
         }
         if (selected_item!=noun->wants) {
@@ -230,8 +246,9 @@ static int room_act_on_witness(struct room *room,int verb,const struct noun *nou
         }
         verblist_unselect();
         inv_set(noun->wants,2);
-        egg_log("%s:%d:TODO: Gave away item, now we need to generate a clue!",__FILE__,__LINE__);
-        log_add_text("TODO clue",9);
+        char text[256];
+        int textc=puzzle_reveal_clue(text,sizeof(text));
+        if ((textc>0)&&(textc<=sizeof(text))) log_add_text(text,textc);
       } break;
   }
   return 0;
@@ -241,6 +258,14 @@ static int room_act_on_witness(struct room *room,int verb,const struct noun *nou
  */
  
 int room_act(struct room *room,int verb,int nounid) {
+  
+  // First let special handlers take a crack at it.
+  int err;
+  switch (room->special) {
+    case ROOM_SPECIAL_LINEUP: if (err=lineup_act(room,verb,nounid)) return err; break;
+  }
+  
+  // Proceed only if there's a noun.
   if (nounid<1) return room_act_nounless(room,verb);
   nounid--;
   if (nounid>=room->nounc) return room_act_nounless(room,verb);
@@ -311,5 +336,8 @@ void room_render(struct room *room,int x,int y,int w,int h) {
     egg_draw_decal(1,room->texid,x+noun->x,y+noun->y,noun->inv_srcx,noun->inv_srcy,noun->w,noun->h,0);
   }
 
-  // TODO Animation?
+  // Special handlers.
+  switch (room->special) {
+    case ROOM_SPECIAL_LINEUP: lineup_render(room,x,y,w,h); break;
+  }
 }

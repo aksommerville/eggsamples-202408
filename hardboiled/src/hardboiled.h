@@ -12,6 +12,8 @@
 #define VERB_EXIT 5
 #define VERB_COUNT 5
 
+#define SUSPECT_COUNT 7
+
 #include <egg/egg.h>
 #include "stdlib/egg-stdlib.h"
 #include "util/font.h"
@@ -31,6 +33,7 @@ void log_update(double elapsed);
 void log_render();
 void log_add_text(const char *src,int srcc); // We implicitly add a newline after.
 void log_add_string(int stringid); // Resets verb too.
+void log_add_string_keep_verb(int stringid); // ...ok turns out i don't want to always reset the verb
 
 int inv_get(int stringid); // => (0,1,2) = (untouched,have,given away)
 void inv_set(int stringid,int has);
@@ -38,5 +41,11 @@ void inventory_press(int x,int y);
 extern int inventory_sequence; // Increments whenever the global inventory changes.
 void inventory_render();
 extern int selected_item; // stringid or zero
+void inventory_add_clue(int fieldid,int value); // puzzle_reveal_clue() calls this
+void inventory_show_items();
+
+void puzzle_init();
+int puzzle_reveal_clue(char *dst,int dsta); // Picks one randomly, generates log message.
+void puzzle_get_suspect(int *hair,int *shirt,int *tie,int suspectp);
 
 #endif

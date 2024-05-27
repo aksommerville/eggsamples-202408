@@ -88,16 +88,17 @@ void log_add_text(const char *src,int srcc) {
     memmove(startv,startv+startc-LINE_COUNT,sizeof(int)*LINE_COUNT);
     startc=LINE_COUNT;
   }
-  
-  // The most correct thing, since we've already split the lines, would be to allocate a soft framebuffer, have font render into that, then upload it.
-  // That's too much ceremony. So instead we will trust font to break it the same way it did just above, and use the more convenient method.
-  //XXX Let it pay out via typewriter.
-  //font_render_to_texture(log_texid,font,log_text,log_textc,DSTW,0x000000);
-  //egg_texture_get_header(&log_texw,&log_texh,0,log_texid);
 }
  
 /* Append string resource to log.
  */
+ 
+void log_add_string_keep_verb(int stringid) {
+  const char *src=0;
+  int srcc=text_get_string(&src,stringid);
+  if (srcc<1) return;
+  log_add_text(src,srcc);
+}
  
 void log_add_string(int stringid) {
   verblist_unselect(); // Arguably not in our writ, but I figure adding a string is always a response to some action and should then reset.

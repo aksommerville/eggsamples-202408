@@ -18,6 +18,9 @@ static int texid_overlay=0;
 static int overlay_sequence=-1;
 static void *overlay_tmp=0;
 int selected_item=0;
+static char clue_text[256]; // The whole text, with newlines
+static int clue_textc=0;
+static int clue_bits=0; // 1<<field, which have we seen so far
 
 /* Public accessors.
  */
@@ -59,8 +62,33 @@ static int inv_append(int *v,int c,int stringid) {
 void inv_set(int stringid,int has) {
   switch (has) {
     case 0: invc=inv_remove(invv,invc,stringid); inv_donec=inv_remove(inv_donev,inv_donec,stringid); return;
-    case 1: invc=inv_append(invv,invc,stringid); inv_donec=inv_remove(inv_donev,inv_donec,stringid); return;
+    case 1: invc=inv_append(invv,invc,stringid); inv_donec=inv_remove(inv_donev,inv_donec,stringid); selected_tab=0; return;
     case 2: invc=inv_remove(invv,invc,stringid); inv_donec=inv_append(inv_donev,inv_donec,stringid); return;
+  }
+}
+
+void inventory_show_items() {
+  if (selected_tab==0) return;
+  selected_tab=0;
+  inventory_sequence++;
+}
+
+/* Add a clue.
+ */
+ 
+void inventory_add_clue(int field,int value) {
+  selected_tab=1;
+  selected_item=0;
+  inventory_sequence++;
+  int bit=1<<field;
+  if (clue_bits&bit) return;
+  clue_bits|=bit;
+  const char *src=0;
+  int srcc=text_get_string(&src,19+field*3+value);
+  if ((srcc>0)&&(clue_textc<sizeof(clue_text)-srcc)) {
+    memcpy(clue_text+clue_textc,src,srcc);
+    clue_textc+=srcc;
+    clue_text[clue_textc++]=0x0a;
   }
 }
 
@@ -87,8 +115,12 @@ void inventory_press(int x,int y) {
     selected_item=0;
     int itemp=(y-7)/10;
     if ((itemp<0)||(itemp>=invc)) return;
-    if (verblist_get()==VERB_GIVE) {
-      selected_item=invv[itemp];
+    switch (verblist_get()) {
+      case VERB_GIVE: selected_item=invv[itemp]; break;
+      case VERB_NONE: { // No verb selected, force it to "Give".
+          verblist_set(VERB_GIVE);
+          selected_item=invv[itemp];
+        } break;
     }
     return;
   }
@@ -115,11 +147,17 @@ static void inv_redraw_overlay() {
     }
     
   } else if (selected_tab==1) {
-    //TODO Text for clues
-    font_render_string_rgba(
-      overlay_tmp,NPW,NPH,NPW<<2,
-      3,6,font,"Text here.",10,0x0000ff
-    );
+    int srcp=0,y=6;
+    while (srcp<clue_textc) {
+      const char *line=clue_text+srcp;
+      int linec=0;
+      while ((srcp<clue_textc)&&(clue_text[srcp++]!=0x0a)) linec++;
+      font_render_string_rgba(
+        overlay_tmp,NPW,NPH,NPW<<2,
+        3,y,font,line,linec,0x0000ff
+      );
+      y+=10;
+    }
   }
   
   font_render_string_rgba(
