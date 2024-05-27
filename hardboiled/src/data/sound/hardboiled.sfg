@@ -1,0 +1,41 @@
+sound click
+  master 0.100
+  shape noise
+  level 0 15 0.900 30 0.100 50 0
+end
+
+sound unclick
+  master 0.200
+  fm 0.5 1
+  rate 120 200 60
+  level 0 20 0.9 180 0
+end
+
+sound door
+  master 0.200
+  fm 2 2
+  rate 400 400 420
+  ratelfo 4 200
+  level 0 40 0.9 120 0.200 240 0
+end
+
+sound typewriter
+  master 0.120
+  fm 0.25 1
+  rate 200
+  level 0 10 0.9 15 0
+end
+
+sound acquire
+  master 0.300
+  fm 1 1
+  rate 500 300 750
+  level 0 30 0.9 50 0.100 120 0
+end
+
+sound shuffle
+  master 0.100
+  fm 0.5 2
+  rate 600 400 800
+  level 0 150 0.9 150 0.1 100 0
+end

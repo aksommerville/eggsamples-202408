@@ -65,8 +65,10 @@ void verblist_press(int x,int y) {
   int verb=(y-4)/16+1;
   if ((verb<1)||(verb>VERB_COUNT)) return;
   if (verb==verb_selected) {
+    egg_audio_play_sound(0,RID_sound_unclick,0x00010000,0);
     verb_selected=0;
   } else {
+    egg_audio_play_sound(0,RID_sound_click,0x00010000,0);
     verb_selected=verb;
     if (verb==VERB_GIVE) inventory_show_items();
   }

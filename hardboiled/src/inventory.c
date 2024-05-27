@@ -72,7 +72,12 @@ static int inv_append(int *v,int c,int stringid) {
 void inv_set(int stringid,int has) {
   switch (has) {
     case 0: invc=inv_remove(invv,invc,stringid); inv_donec=inv_remove(inv_donev,inv_donec,stringid); return;
-    case 1: invc=inv_append(invv,invc,stringid); inv_donec=inv_remove(inv_donev,inv_donec,stringid); selected_tab=0; return;
+    case 1: {
+        egg_audio_play_sound(0,RID_sound_acquire,0x00010000,0);
+        invc=inv_append(invv,invc,stringid);
+        inv_donec=inv_remove(inv_donev,inv_donec,stringid);
+        selected_tab=0; 
+      } return;
     case 2: invc=inv_remove(invv,invc,stringid); inv_donec=inv_append(inv_donev,inv_donec,stringid); return;
   }
 }

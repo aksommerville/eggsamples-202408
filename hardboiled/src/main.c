@@ -65,6 +65,9 @@ int change_room(int rid) {
     if (!newroom) return -1;
     room_del(current_room);
     current_room=newroom;
+    if (newroom&&newroom->songid) {
+      egg_audio_play_song(0,newroom->songid,0,1);
+    }
   }
   verblist_unselect();
   focus_noun=0;

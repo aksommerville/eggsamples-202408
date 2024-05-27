@@ -126,6 +126,7 @@ static void log_advance_typewriter() {
   if ((seqlen=text_utf8_decode(&codepoint,log_text+log_printc,log_textc-log_printc))<1) {
     seqlen=1;
   }
+  if (codepoint>0x20) egg_audio_play_sound(0,RID_sound_typewriter,0x00010000,0);
   log_printc+=seqlen;
   font_render_to_texture(log_texid,font,log_text,log_printc,DSTW,0x000000);
   egg_texture_get_header(&log_texw,&log_texh,0,log_texid);

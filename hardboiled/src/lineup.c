@@ -48,8 +48,8 @@ static void lineup_cancel_arrest() {
  
 int lineup_act(struct room *room,int verb,int nounid) {
   switch (nounid) {
-    case 1: if (scroll>=48) dscroll=-1; return 1;
-    case 2: if (scroll<=SCROLL_LIMIT-48) dscroll=1; return 1;
+    case 1: if (scroll>=48) { egg_audio_play_sound(0,RID_sound_shuffle,0x00010000,0); dscroll=-1; } return 1;
+    case 2: if (scroll<=SCROLL_LIMIT-48) { egg_audio_play_sound(0,RID_sound_shuffle,0x00010000,0); dscroll=1; } return 1;
   }
   if (!verb&&!nounid) { // Check whether we've clicked on a suspect.
     // I didn't plan well for this case, where we click on something that can scroll behind the scenes.

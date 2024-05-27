@@ -48,7 +48,6 @@ static int room_init(struct room *room) {
       return -1;
     }
   }
-  if (room->songid) egg_audio_play_song(0,room->songid,0,1);
   return 0;
 }
 
@@ -307,6 +306,7 @@ int room_act(struct room *room,int verb,int nounid) {
   if (noun->roomid) {
     switch (verb) {
       case VERB_NONE: {
+          egg_audio_play_sound(0,RID_sound_door,0x00010000,0);
           if (change_room(noun->roomid)<0) return -1;
         } return 1;
     }

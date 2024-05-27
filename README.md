@@ -63,8 +63,8 @@ What kind of demo games should I write? Looks like we'll need half a dozen or so
 
 - Rhythm.
 - ~Space Invaders. Maybe in WAT, since it's not complicated.~
-- Visual Novel. The important thing being input: Mouse, Touch, Joystick, and Keyboard should all be useable.
-- - Ooh ooh! Make it a gritty detective story like Deja Vu so we can call it "Hard Boiled"!
+- ~Visual Novel. The important thing being input: Mouse, Touch, Joystick, and Keyboard should all be useable.~
+- - ~Ooh ooh! Make it a gritty detective story like Deja Vu so we can call it "Hard Boiled"!~
 - Platformer.
 - Formal RPG.
 - At least one game with nice high-resolution graphics, so people don't get the wrong idea!
