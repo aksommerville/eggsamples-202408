@@ -149,9 +149,13 @@ int inkeep_set_cursor(int imageid,int x,int y,int w,int h,int xform,int hotx,int
 
 int inkeep_set_player_count(int playerc) {
   if (playerc<1) playerc=1;
-  else if (playerc>16) playerc=16;
+  else if (playerc>=INKEEP_PLAYER_LIMIT) playerc=INKEEP_PLAYER_LIMIT-1;
   inkeep.playerc=playerc;
-  //TODO Assign joysticks.
+  struct inkeep_joy *joy=inkeep.joyv;
+  int i=inkeep.joyc;
+  for (;i-->0;joy++) {
+    if (joy->plrid>playerc) joy->plrid=0;
+  }
   return playerc;
 }
 
@@ -227,6 +231,7 @@ int inkeep_set_mode(int mode) {
               inkeep.fake_pointer=1;
               inkeep.fakemousex=inkeep.mousex;
               inkeep.fakemousey=inkeep.mousey;
+              inkeep.fakemouse_soft_hide=1;
             }
           }
           egg_lock_cursor(0);
@@ -247,6 +252,7 @@ int inkeep_set_mode(int mode) {
               inkeep.fake_pointer=1;
               inkeep.fakemousex=inkeep.mousex;
               inkeep.fakemousey=inkeep.mousey;
+              inkeep.fakemouse_soft_hide=1;
             }
           }
           egg_lock_cursor(0);

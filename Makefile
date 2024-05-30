@@ -19,7 +19,7 @@ export EGG_ARCH:=$(firstword $(filter linux mswin macos,$(notdir $(wildcard $(EG
 #------------------------------------------------
 # Everything in the repo's root directory (where this Makefile lives) must be named exactly once here.
 
-GAMES_MAKE:=lightson shmup
+GAMES_MAKE:=lightson shmup hardboiled legend
 GAMES_IGNORE:=Makefile README.md \
   ts minigolf wat cfood # from egg-202405, no longer compatible
 

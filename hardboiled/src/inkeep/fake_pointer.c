@@ -5,6 +5,7 @@
  */
  
 void fake_pointer_render() {
+  if (inkeep.fakemouse_soft_hide) return;
   int dstx,dsty;
   if (inkeep.mode==INKEEP_MODE_TOUCH) {
     dstx=inkeep.touchx;
@@ -30,12 +31,14 @@ void fake_pointer_update(double elapsed) {
   if (iy<0) iy=0; else if (iy>=inkeep.screenh) iy=inkeep.screenh-1;
   if (inkeep.mode==INKEEP_MODE_TOUCH) {
     if ((ix!=inkeep.touchx)||(iy!=inkeep.touchy)) {
+      inkeep.fakemouse_soft_hide=0;
       inkeep.touchx=inkeep.mousex=ix;
       inkeep.touchy=inkeep.mousey=iy;
       inkeep_broadcast_touch(EGG_TOUCH_MOVE,ix,iy);
     }
   } else {
     if ((ix!=inkeep.mousex)||(iy!=inkeep.mousey)) {
+      inkeep.fakemouse_soft_hide=0;
       inkeep.mousex=inkeep.touchx=ix;
       inkeep.mousey=inkeep.touchy=iy;
       inkeep_broadcast_mmotion(ix,iy);
@@ -82,6 +85,7 @@ void fake_pointer_key(int keycode,int value) {
 }
 
 void fake_pointer_mmotion(int x,int y) {
+  inkeep.fakemouse_soft_hide=0;
   inkeep.fakemousex=inkeep.mousex=inkeep.touchx=x;
   inkeep.fakemousey=inkeep.mousey=inkeep.touchy=y;
   if (inkeep.mode==INKEEP_MODE_TOUCH) {

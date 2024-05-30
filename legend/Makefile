@@ -15,7 +15,7 @@ endif
 EGGDEV:=$(EGG_SDK)/out/tools/eggdev
 EGG:=$(EGG_SDK)/out/$(EGG_ARCH)/egg
 
-PROJNAME:=hardboiled
+PROJNAME:=legend
 
 # List final outputs. ROM is required; the other three, you can blank if you don't want them.
 # EXE_NATIVE requires CC_NATIVE and AR_NATIVE set.
@@ -41,7 +41,6 @@ AR_NATIVE:=ar rc
 # Rules to generate data files.
 # It's normal to have just the one `cp` (in which case a lot of the "DATA" stuff below is redundant).
 $(MIDDIR)/data/%:src/data/%;$(PRECMD) cp $< $@
-$(MIDDIR)/data/room/%:src/data/room/% etc/tool/room.js $(DATAHEADER);$(PRECMD) node etc/tool/room.js -o$@ $< --header=$(DATAHEADER)
 
 # Can add `--external` to serve on external interfaces, eg to test on your phone. Don't leave that on.
 serve:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/www

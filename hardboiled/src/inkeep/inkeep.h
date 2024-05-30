@@ -42,6 +42,26 @@ struct font;
 #define INKEEP_MODE_MOUSE  5
 #define INKEEP_MODE_POV    6
 
+/* Button IDs in JOY mode are a 16-bit mask.
+ * Bit index matches EGG_JOYBTN_*-0x80, which in turn is derived from Standard Mapping.
+ */
+#define INKEEP_BTNID_SOUTH (1<<(EGG_JOYBTN_SOUTH-0x80))
+#define INKEEP_BTNID_EAST  (1<<(EGG_JOYBTN_EAST-0x80))
+#define INKEEP_BTNID_WEST  (1<<(EGG_JOYBTN_WEST-0x80))
+#define INKEEP_BTNID_NORTH (1<<(EGG_JOYBTN_NORTH-0x80))
+#define INKEEP_BTNID_L1    (1<<(EGG_JOYBTN_L1-0x80))
+#define INKEEP_BTNID_R1    (1<<(EGG_JOYBTN_R1-0x80))
+#define INKEEP_BTNID_L2    (1<<(EGG_JOYBTN_L2-0x80))
+#define INKEEP_BTNID_R2    (1<<(EGG_JOYBTN_R2-0x80))
+#define INKEEP_BTNID_AUX2  (1<<(EGG_JOYBTN_AUX2-0x80))
+#define INKEEP_BTNID_AUX1  (1<<(EGG_JOYBTN_AUX1-0x80))
+#define INKEEP_BTNID_LP    (1<<(EGG_JOYBTN_LP-0x80))
+#define INKEEP_BTNID_RP    (1<<(EGG_JOYBTN_RP-0x80))
+#define INKEEP_BTNID_UP    (1<<(EGG_JOYBTN_UP-0x80))
+#define INKEEP_BTNID_DOWN  (1<<(EGG_JOYBTN_DOWN-0x80))
+#define INKEEP_BTNID_LEFT  (1<<(EGG_JOYBTN_LEFT-0x80))
+#define INKEEP_BTNID_RIGHT (1<<(EGG_JOYBTN_RIGHT-0x80))
+
 /* We have a hook for each of the client hooks.
  * Call our 'render' after you've drawn your scene.
  */

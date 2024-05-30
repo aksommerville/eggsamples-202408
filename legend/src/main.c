@@ -1,0 +1,46 @@
+#include "legend.h"
+#include <egg/hid_keycode.h>
+
+struct legend legend={0};
+
+void egg_client_quit() {
+  inkeep_quit();
+}
+
+static void cb_joy(int plrid,int btnid,int value,int state,void *userdata) {
+  egg_log("%s %d.0x%04x=%d [0x%04x]",__func__,plrid,btnid,value,state);
+}
+
+static void cb_raw(const union egg_event *event,void *userdata) {
+  switch (event->type) {
+    case EGG_EVENT_KEY: if (event->key.value) switch (event->key.keycode) {
+        case KEY_ESCAPE: egg_request_termination(); break;
+      } break;
+  }
+}
+
+int egg_client_init() {
+
+  // Our hard-coded SCREENW,SCREENH must match the actual main framebuffer.
+  int screenw=0,screenh=0;
+  egg_texture_get_header(&screenw,&screenh,0,1);
+  if ((screenw!=SCREENW)||(screenh!=SCREENH)) {
+    egg_log("Expected framebuffer size %dx%d, found %dx%d",SCREENW,SCREENH,screenw,screenh);
+    return -1;
+  }
+
+  if (inkeep_init()<0) return -1;
+  inkeep_set_player_count(16);
+  inkeep_set_mode(INKEEP_MODE_JOY);
+  inkeep_listen_joy(cb_joy,0);
+  inkeep_listen_raw(cb_raw,0);
+  return 0;
+}
+
+void egg_client_update(double elapsed) {
+  inkeep_update(elapsed);
+}
+
+void egg_client_render() {
+  inkeep_render();
+}

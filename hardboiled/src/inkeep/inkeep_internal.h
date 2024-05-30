@@ -35,6 +35,15 @@ struct inkeep_listener {
   void *userdata;
 };
 
+#define INKEEP_PLAYER_LIMIT 32 /* Limit both for players and for joystick devices. */
+
+struct inkeep_joy {
+  int devid;
+  int plrid;
+  uint16_t state;
+  int8_t lx,ly;
+};
+
 extern struct inkeep {
   int mode;
   struct font *font;
@@ -58,12 +67,16 @@ extern struct inkeep {
   int cursorbtn;
   double fakemousex,fakemousey;
   double fakemouse_speed;
+  int fakemouse_soft_hide;
   int keycolw,keyrowh;
   int keyoverlay_texid;
   int keyoverlay_dirty;
   int keydx,keydy;
   double keymoveclock;
   int quickshift;
+  uint16_t playerv[INKEEP_PLAYER_LIMIT];
+  struct inkeep_joy joyv[INKEEP_PLAYER_LIMIT];
+  int joyc;
 } inkeep;
 
 void inkeep_broadcast_raw(const union egg_event *event);

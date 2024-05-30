@@ -36,6 +36,11 @@ Write something better!
 Point-and-click detective game, culminates in a pretty simple elimination puzzle.
 Using this as the guinea pig for a modal input manager.
 
+### legend
+
+A Legend of Zelda clone, more or less.
+One screen at a time, no scrolling. Multiplayer support.
+
 ## TODO
 
 - [ ] General utilities.
@@ -44,18 +49,20 @@ Using this as the guinea pig for a modal input manager.
 - - [x] menu
 - - [x] strings
 - - [ ] input coersion (fake keyboard, fake pointer, keyboard and touch as joystick, etc)
+- - - [ ] Touch=>Joy
 - [x] libc
 - [ ] Lights-on test ROM. Hit every entry point.
 - - [ ] Sound effects on UI activity. (it's not just fluff, it helps validate audio)
 - - [ ] Report high water mark and final state (memory leaks) from malloc.
-- [ ] A game in C.
+- [x] A game in C.
 - [ ] A game in WAT
 - [ ] A game in C++. Not going to bother with C++-conventional libs, but do at least demonstrate it can be done.
 - [ ] Other Wasmable languages: Rust, Go, Zig... Pascal? Fortran?
 - [ ] Client-side rendering in a laughably small framebuffer.
 - [ ] 3d graphics with triangles. I'm really curious how far one can take that. Can I write a StarFox clone?
-- [ ] inkeep: Hide cursor until first event. It's misleading, I catch myself clicking out of the window because the cursor is there in the middle.
-- [ ] malloc.c produces a 16-MB intermediate file. No harm, but can we prevent that?
+- [x] inkeep: Hide cursor until first event. It's misleading, I catch myself clicking out of the window because the cursor is there in the middle.
+- [x] malloc.c produces a 16-MB intermediate file. No harm, but can we prevent that? ...no doesn't seem so
+- [ ] Touch events get processed twice (presumably being aliased as mouse by the browser)
 
 ## Game Ideas
 
