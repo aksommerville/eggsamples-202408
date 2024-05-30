@@ -230,6 +230,7 @@ void egg_client_update(double elapsed) {
           case EGG_JOYBTN_SOUTH: if (event->joy.value) fire_laser(); break;
           case EGG_JOYBTN_RIGHT: if (event->joy.value) herodx=1; else if (herodx>0) herodx=0; break;
           case EGG_JOYBTN_LEFT: if (event->joy.value) herodx=-1; else if (herodx<0) herodx=0; break;
+          case EGG_JOYBTN_RP: if (event->joy.value) egg_request_termination(); break;
         } break;
       case EGG_EVENT_MMOTION: {
           herox+=event->mmotion.x;

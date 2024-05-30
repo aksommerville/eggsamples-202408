@@ -82,6 +82,9 @@ static void cb_raw(const union egg_event *event,void *userdata) {
     case EGG_EVENT_KEY: if (event->key.value) switch (event->key.keycode) {
         case KEY_ESCAPE: egg_request_termination(); break;
       } break;
+    case EGG_EVENT_JOY: if (event->joy.value) switch (event->joy.btnid) {
+        case EGG_JOYBTN_RP: egg_request_termination(); break;
+      } break;
   }
 }
 
