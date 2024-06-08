@@ -14,13 +14,20 @@ Except `stdlib/math.c`, copied from newlib (https://sourceware.org/git/newlib-cy
 
 ## The Games
 
+Everything is playable right here in your browser.
+(I'm going to forget to keep those up to date. Reminder: `make playables` on branch `gh-pages`).
+
 ### lightson
+
+<a href="https://aksommerville.github.io/eggsamples/playable/lighton.html">Play</a>
 
 Egg's official test ROM.
 It exposes pretty much all of the platform's features, in a fashion easy to validate.
 I use this to discover differences between ports of the platform.
 
 ### shmup
+
+<a href="https://aksommerville.github.io/eggsamples/playable/shmup.html">Play</a>
 
 Like Space Invaders.
 Intended to demonstrate the barest minimum of everything.
@@ -30,16 +37,22 @@ Write something better!
 
 ### hardboiled
 
+<a href="https://aksommerville.github.io/eggsamples/playable/hardboiled.html">Play</a>
+
 Point-and-click detective game, culminates in a pretty simple elimination puzzle.
 Using this as the guinea pig for a modal input manager.
 
 ### arrautza
+
+<a href="https://aksommerville.github.io/eggsamples/playable/arrautza.html">Play</a>
 
 The Leggend of Arrautza! That's the Basque word for "egg", and it sounds cool.
 A Legend of Zelda clone, more or less.
 One screen at a time, no scrolling. Multiplayer support.
 
 ### gravedigger
+
+<a href="https://aksommerville.github.io/eggsamples/playable/gravedigger.html">Play</a>
 
 Example of rendering into a pure software framebuffer.
 Dig a hole and bury the coffins.

@@ -43,4 +43,5 @@ clean:;$(foreach G,$(GAMES_MAKE),make --no-print-directory -C$G clean ; )
 $(addprefix run-,$(GAMES_MAKE)):;make --no-print-directory -C$(subst run-,,$@) run
 
 # Copy HTML builds into playable -- these will be committed like input files.
+# These have to be committed on the "gh-pages" branch to be servable from Github.
 playables:all;cp $(foreach G,$(GAMES_MAKE),$G/out/$G.html) playable
