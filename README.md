@@ -19,7 +19,7 @@ Everything is playable right here in your browser.
 
 ### lightson
 
-<a href="https://aksommerville.github.io/eggsamples/playable/lighton.html">Play</a>
+<a href="https://aksommerville.github.io/eggsamples/playable/lightson.html">Play</a>
 
 Egg's official test ROM.
 It exposes pretty much all of the platform's features, in a fashion easy to validate.
