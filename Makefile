@@ -19,9 +19,8 @@ export EGG_ARCH:=$(firstword $(filter linux mswin macos,$(notdir $(wildcard $(EG
 #------------------------------------------------
 # Everything in the repo's root directory (where this Makefile lives) must be named exactly once here.
 
-GAMES_MAKE:=lightson shmup hardboiled legend
-GAMES_IGNORE:=Makefile README.md \
-  ts minigolf wat cfood # from egg-202405, no longer compatible
+GAMES_MAKE:=lightson shmup hardboiled arrautza gravedigger
+GAMES_IGNORE:=Makefile README.md playable
 
 #------------------------------------------------
 
@@ -42,3 +41,6 @@ all:$(addprefix build-,$(GAMES_MAKE))
 build-%:force;make --no-print-directory -C$*
 clean:;$(foreach G,$(GAMES_MAKE),make --no-print-directory -C$G clean ; )
 $(addprefix run-,$(GAMES_MAKE)):;make --no-print-directory -C$(subst run-,,$@) run
+
+# Copy HTML builds into playable -- these will be committed like input files.
+playables:all;cp $(foreach G,$(GAMES_MAKE),$G/out/$G.html) playable

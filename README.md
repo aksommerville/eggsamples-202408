@@ -14,9 +14,6 @@ Except `stdlib/math.c`, copied from newlib (https://sourceware.org/git/newlib-cy
 
 ## The Games
 
-ts, minigolf, wat, cfood: Written against an earlier and incompatible version of Egg.
-Keeping for now as a reference, while I build out the new ones.
-
 ### lightson
 
 Egg's official test ROM.
@@ -36,10 +33,18 @@ Write something better!
 Point-and-click detective game, culminates in a pretty simple elimination puzzle.
 Using this as the guinea pig for a modal input manager.
 
-### legend
+### arrautza
 
+The Leggend of Arrautza! That's the Basque word for "egg", and it sounds cool.
 A Legend of Zelda clone, more or less.
 One screen at a time, no scrolling. Multiplayer support.
+
+### gravedigger
+
+Example of rendering into a pure software framebuffer.
+Dig a hole and bury the coffins.
+You'll notice there's a pretty substantial CPU cost for rendering client-side, and it's heavier in wasm than native.
+Expect that cost to scale with the size of the framebuffer.
 
 ## TODO
 
@@ -58,11 +63,14 @@ One screen at a time, no scrolling. Multiplayer support.
 - [ ] A game in WAT
 - [ ] A game in C++. Not going to bother with C++-conventional libs, but do at least demonstrate it can be done.
 - [ ] Other Wasmable languages: Rust, Go, Zig... Pascal? Fortran?
+- [ ] Realistic OpenGL demo. Hit as much of GLES2 as we can manage.
 - [ ] Client-side rendering in a laughably small framebuffer.
 - [ ] 3d graphics with triangles. I'm really curious how far one can take that. Can I write a StarFox clone?
 - [x] inkeep: Hide cursor until first event. It's misleading, I catch myself clicking out of the window because the cursor is there in the middle.
 - [x] malloc.c produces a 16-MB intermediate file. No harm, but can we prevent that? ...no doesn't seem so
 - [ ] Touch events get processed twice (presumably being aliased as mouse by the browser)
+- [ ] Make a separate "eggzotics" repo for projects that target Egg in addition to some highly-constrained native platform (Playdate, TinyArcade, ...)
+- [ ] Include an HTML build of each game such that they're playable from within Github.
 
 ## Game Ideas
 

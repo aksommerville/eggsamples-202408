@@ -1,0 +1,7 @@
+title=Gravedigger
+author=AK Sommerville
+language=en
+iconImage=1
+
+# Also hardcoded in src/gravedigger.h
+framebuffer=240x134
