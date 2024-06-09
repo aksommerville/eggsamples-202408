@@ -1,25 +1,7 @@
-#include <egg/egg.h>
 #include <egg/hid_keycode.h>
 #include "gravedigger.h"
 
-static uint32_t fb[SCREENW*SCREENH]; // Redrawn each frame.
-static uint32_t terrain[SCREENW*SCREENH]; // Background image, changes only on user actions.
-static uint32_t spritebits[SPRITESW*SPRITESH];
-
-static double herox=SCREENW/2.0; // center
-static double heroy=SCREENH/2.0; // bottom
-static int herodx=0;
-static int herofacex=1;
-static int heroframe=0;
-static double heroclock=0.0;
-static int herocarrying=0;
-static int heroseated=1;
-static int heroeffort=0; // Nonzero if we ascended on the last frame; slow down the next motion.
-static int herojump=0;
-static double herojumppower=0.0;
-static double herogravity=0.0;
-static double herocoyote=0.0; // Counts down after unseating, a brief interval when jumping is still allowed.
-static double herodigclock=0.0; // Counts down during dig animation; no other activity permitted until it reaches zero.
+struct globals g={0};
 
 void egg_client_quit() {
 }
@@ -36,29 +18,67 @@ int egg_client_init() {
       egg_log("image:0:2 must be %dx%d RGBA, found %dx%d fmt=%d",SPRITESW,SPRITESH,w,h,fmt);
       return -1;
     }
-    if (egg_image_decode(spritebits,sizeof(spritebits),0,2)!=sizeof(spritebits)) {
+    if (egg_image_decode(g.spritebits,sizeof(g.spritebits),0,2)!=sizeof(g.spritebits)) {
       egg_log("Failed to decode image:0:2");
       return -1;
     }
   }
   
   // Reset game state.
-  redraw_terrain(terrain,SCREENH>>1);
-  herox=SCREENW/2.0;
-  heroy=SCREENH/2.0;
-  herofacex=1;
-  herodx=0;
-  heroframe=0;
-  heroclock=0.0;
-  herocarrying=0;
-  heroseated=1;
-  heroeffort=0;
-  herojump=0;
-  herojumppower=0.0;
-  herogravity=0.0;
-  herodigclock=0.0;
+  redraw_terrain(g.terrain,SCREENH>>1);
+  g.coffinc=generate_coffins(g.coffinv,COFFIN_LIMIT);
+  hero_reset(&g.hero);
+  g.dayclock=DAY_LENGTH;
+  g.vampire_flop_clock=0;
   
   return 0;
+}
+
+/* Repair terrain after digging or picking up a coffin.
+ *****************************************************************************/
+
+static void sort_terrain_column(int x) {
+  uint32_t *v=g.terrain+x;
+  
+  int lowest_sky=0;
+  int y=SCREENH-1;
+  uint32_t *p=v+y*SCREENW;
+  for (;y>=0;y--,p-=SCREENW) {
+    if (!COLOR_IS_DIRT(*p)&&!test_coffin_pixel(x,y)) {
+      lowest_sky=y;
+      break;
+    }
+  }
+  if (!lowest_sky) return;
+
+  for (y=0,p=v;y<lowest_sky;y++,p+=SCREENW) {
+    if (COLOR_IS_DIRT(*p)) {
+      *p=COLOR_SKY;
+      v[lowest_sky*SCREENW]=COLOR_DIRT;
+      lowest_sky--;
+      while ((lowest_sky>0)&&COLOR_IS_DIRT(v[lowest_sky*SCREENW])&&!test_coffin_pixel(x,lowest_sky)) lowest_sky--;
+      if (!lowest_sky) return;
+    }
+  }
+}
+
+void repair_terrain(int x,int w) {
+  if (x<0) { w+=x; x=0; }
+  if (x>SCREENW-w) w=SCREENW-x;
+  if (w<1) return;
+  
+  /* Check for floating dirt in the dig zone.
+   * As a firm rule, we will never allow sky below dirt. -- Except if there's a coffin; terrain behind a coffin is sky, not dirt.
+   * A little heavy-handed about this; we'll examine entire columns of the framebuffer, anywhere it might have been impacted.
+   * And actually overshoot a little to be on the safe side. Whatever.
+   */
+  int chkx=x;
+  int xi=w;
+  for (;xi-->0;chkx++) {
+    sort_terrain_column(chkx);
+  }
+  
+  coffins_force_valid(g.coffinv,g.coffinc);
 }
 
 /* Shovel: Find some dirt we can move and commit the change immediately in (terrain).
@@ -80,33 +100,8 @@ static const struct digzoned {
   {-1, 3},{ 0, 3},{ 1, 3},{ 2, 3},{ 3, 3},
           { 0, 4},{ 1, 4},{ 2, 4},
 };
-
-static void sort_terrain_column(int x) {
-  uint32_t *v=terrain+x;
-  
-  int lowest_sky=0;
-  int y=SCREENH-1;
-  uint32_t *p=v+y*SCREENW;
-  for (;y>=0;y--,p-=SCREENW) {
-    if (!COLOR_IS_DIRT(*p)) {
-      lowest_sky=y;
-      break;
-    }
-  }
-  if (!lowest_sky) return;
-
-  for (y=0,p=v;y<lowest_sky;y++,p+=SCREENW) {
-    if (COLOR_IS_DIRT(*p)) {
-      *p=COLOR_SKY;
-      v[lowest_sky*SCREENW]=COLOR_DIRT;
-      lowest_sky--;
-      while ((lowest_sky>0)&&COLOR_IS_DIRT(v[lowest_sky*SCREENW])) lowest_sky--;
-      if (!lowest_sky) return;
-    }
-  }
-}
  
-static void choose_and_move_dirt(int x,int y,int dx) {
+void choose_and_move_dirt(int x,int y,int dx) {
   if (x<0) x=0; else if (x>=SCREENW) x=SCREENW-1;
   if (y<0) y=0; else if (y>=SCREENH) y=SCREENH-1;
   
@@ -121,7 +116,7 @@ static void choose_and_move_dirt(int x,int y,int dx) {
     if ((dirtx<0)||(dirtx>=SCREENW)) continue;
     int dirty=y+d->dy;
     if ((dirty<0)||(dirty>=SCREENH)) continue;
-    if (COLOR_IS_DIRT(terrain[dirty*SCREENW+dirtx])) dirtc++;
+    if (COLOR_IS_DIRT(g.terrain[dirty*SCREENW+dirtx])) dirtc++;
   }
   if (!dirtc) return; // No dirt here (must be standing on the bottom of screen?)
   
@@ -139,7 +134,7 @@ static void choose_and_move_dirt(int x,int y,int dx) {
   int vacantc=0;
   for (;columni<columnc;columni++,columnx-=dx) {
     if ((columnx<0)||(columnx>=SCREENW)) continue;
-    columnv[columni]=find_highest_dirt(terrain,columnx,columny,1,columnh);
+    columnv[columni]=find_highest_dirt(g.terrain,columnx,columny,1,columnh);
     vacantc+=columnv[columni];
   }
   if (!vacantc) return; // Nowhere to put the dirt.
@@ -153,9 +148,9 @@ static void choose_and_move_dirt(int x,int y,int dx) {
     if ((dirtx<0)||(dirtx>=SCREENW)) continue;
     int dirty=y+d->dy;
     if ((dirty<0)||(dirty>=SCREENH)) continue;
-    if (!COLOR_IS_DIRT(terrain[dirty*SCREENW+dirtx])) continue;
+    if (!COLOR_IS_DIRT(g.terrain[dirty*SCREENW+dirtx])) continue;
     dirtc--;
-    terrain[dirty*SCREENW+dirtx]=COLOR_SKY;
+    g.terrain[dirty*SCREENW+dirtx]=COLOR_SKY;
     int dstcol=0;
     for (columni=columnc;columni-->0;) {
       if (columnv[columni]>=columnv[dstcol]) dstcol=columni;
@@ -163,164 +158,10 @@ static void choose_and_move_dirt(int x,int y,int dx) {
     if (columnv[dstcol]<1) break; // shouldn't be possible but let's stay safe.
     columnv[dstcol]--;
     int dstx=x-(2+dstcol)*dx;
-    terrain[(columny+columnv[dstcol])*SCREENW+dstx]=COLOR_DIRT;
+    g.terrain[(columny+columnv[dstcol])*SCREENW+dstx]=COLOR_DIRT;
   }
   
-  /* Check for floating dirt in the dig zone.
-   * As a firm rule, we will never allow sky below dirt.
-   * A little heavy-handed about this; we'll examine entire columns of the framebuffer, anywhere it might have been impacted.
-   * And actually overshoot a little to be on the safe side. Whatever.
-   */
-  int chkxlo=x-8,chkxhi=x+8;
-  if (chkxlo<0) chkxlo=0;
-  if (chkxhi>=SCREENW) chkxhi=SCREENW-1;
-  if (chkxlo<=chkxhi) {
-    int chkx=chkxlo;
-    for (;chkx<=chkxhi;chkx++) {
-      sort_terrain_column(chkx);
-    }
-  }
-}
-
-/* Hero.
- ***********************************************************************/
- 
-static void hero_render() {
-  int dstx=(int)herox-3;
-  int dsty=(int)heroy-11;
-  int srcx=heroframe*7;
-  if (herocarrying) srcx+=28;
-  else if (herodigclock>=0.200) srcx=56;
-  else if (herodigclock>0.0) srcx=63;
-  blit_sprite(fb,dstx,dsty,spritebits,srcx,0,7,11,herofacex<0);
-  if (herocarrying) {
-    blit_sprite(fb,dstx-2,dsty-4,spritebits,0,11,11,4,0);
-  }
-}
-
-// Set or clear (heroseated) according to current position.
-// With (bubble_up), allow that he might be buried, and force (heroy) higher to escape it.
-static void hero_check_seated(int bubble_up) {
-  int x=(int)herox;
-  int y=(int)heroy;
-  if (x<0) x=0; else if (x>=SCREENW) x=SCREENW-1;
-  if (y<0) y=0; else if (y>=SCREENH) y=SCREENH;
-  if ((y>=SCREENH)||COLOR_IS_DIRT(terrain[y*SCREENW+x])) {
-    if (bubble_up) {
-      while ((y>0)&&COLOR_IS_DIRT(terrain[(y-1)*SCREENW+x])) {
-        y--;
-        heroy-=1.0;
-      }
-    }
-    if (!heroseated) {
-      while ((y>0)&&COLOR_IS_DIRT(terrain[(y-1)*SCREENW+x])) y--;
-      heroseated=1;
-      heroy=y;
-      herogravity=0.0;
-    }
-  } else if (heroseated) {
-    heroseated=0;
-    herocoyote=0.080;
-  }
-}
-
-// If we've walked into dirt, try stepping up. If that fails, return zero to request backing out the move.
-static int hero_adjust_after_walk() {
-  int x=(int)herox;
-  int y=(int)heroy-11;
-  if (x<0) x=0; else if (x>=SCREENW) x=SCREENW-1;
-  if (y<0) y=0; else if (y>=SCREENH) y=SCREENH-1;
-  int depth=find_highest_dirt(terrain,x,y,1,11);
-  if (depth>=11) return 1; // Free and clear.
-  if (depth>=8) { // Allow walking up gentle slopes.
-    heroy=y+depth;
-    heroeffort=1;
-    return 1;
-  }
-  // Too much dirt here. Reject the move.
-  return 0;
-}
- 
-static void hero_update(double elapsed) {
-
-  if ((herocoyote-=elapsed)<=0.0) herocoyote=0.0;
-  if ((herodigclock-=elapsed)<=0.0) herodigclock=0.0;
-
-  if (herodx&&(herodigclock<=0.0)) {
-    if ((heroclock-=elapsed)<=0) {
-      heroclock+=0.125;
-      if (++heroframe>=4) heroframe=0;
-    }
-    double walkspeed=60.0; // px/s
-    if (heroeffort) {
-      walkspeed*=0.5;
-      heroeffort=0;
-    }
-    double herox0=herox;
-    herox+=walkspeed*elapsed*herodx;
-    if (herox<0.0) herox=0.0;
-    else if (herox>SCREENW) herox=SCREENW;
-    if (!hero_adjust_after_walk()) herox=herox0;
-    hero_check_seated(0);
-  }
-
-  if (herojump) {
-    herojumppower-=400.0*elapsed;
-    if (herojumppower<10.0) {
-      herojump=0;
-    } else {
-      heroy-=herojumppower*elapsed;
-    }
-    hero_check_seated(0);
-
-  } else if (!heroseated) {
-    herogravity+=300.0*elapsed;
-    if (herogravity>200.0) herogravity=200.0;
-    heroy+=herogravity*elapsed;
-    if (heroy>=SCREENH) heroy=SCREENH;
-    hero_check_seated(0);
-  }
-}
-
-static void hero_walk_begin(int dx) {
-  herodx=dx;
-  herofacex=dx;
-}
-
-static void hero_walk_end() {
-  herodx=0;
-  heroframe=0;
-  heroclock=0.0;
-}
-
-static void hero_jump_begin() {
-  if (!heroseated&&(herocoyote<=0.0)) return;
-  if (herodigclock>0.0) return;
-  herojump=1;
-  herojumppower=150.0;
-  herogravity=0.0;
-  herocoyote=0.0;
-}
-
-static void hero_jump_end() {
-  if (!herojump) return;
-  herojump=0;
-  hero_check_seated(0);
-}
-
-static void hero_toggle_carry() {
-  herocarrying^=1;//TODO
-}
-
-static void hero_dig() {
-  if (herocarrying) return;
-  if (!heroseated) return;
-  if (herojump) return;
-  herodigclock=0.400;
-  int x=(int)herox;
-  int y=(int)heroy;
-  choose_and_move_dirt(x,y,herofacex);
-  hero_check_seated(1);
+  repair_terrain(x-8,16);
 }
 
 /* Event dispatch.
@@ -328,23 +169,27 @@ static void hero_dig() {
  
 static void on_key(int keycode,int value) {
   if (value>1) return;
+  // Always available:
   switch (keycode) {
     case KEY_ESCAPE: if (value) egg_request_termination(); break;
-    case KEY_LEFT: if (value) hero_walk_begin(-1); else if (herodx<0) hero_walk_end(); break;
-    case KEY_RIGHT: if (value) hero_walk_begin(1); else if (herodx>0) hero_walk_end(); break;
-    case KEY_DOWN: if (value) hero_toggle_carry(); break;
-    case KEY_Z: if (value) hero_jump_begin(); else hero_jump_end(); break;
-    case KEY_X: if (value) hero_dig(); break;
+  }
+  // Only during play:
+  if (g.dayclock>0.0) switch (keycode) {
+    case KEY_LEFT: if (value) hero_walk_begin(&g.hero,-1); else if (g.hero.dx<0) hero_walk_end(&g.hero); break;
+    case KEY_RIGHT: if (value) hero_walk_begin(&g.hero,1); else if (g.hero.dx>0) hero_walk_end(&g.hero); break;
+    case KEY_DOWN: if (value) hero_toggle_carry(&g.hero); break;
+    case KEY_Z: if (value) hero_jump_begin(&g.hero); else hero_jump_end(&g.hero); break;
+    case KEY_X: if (value) hero_dig(&g.hero); break;
   }
 }
 
 static void on_joy(int btnid,int value) {
-  switch (btnid) {
-    case EGG_JOYBTN_LEFT: if (value) hero_walk_begin(-1); else if (herodx<0) hero_walk_end(); break;
-    case EGG_JOYBTN_RIGHT: if (value) hero_walk_begin(1); else if (herodx>0) hero_walk_end(); break;
-    case EGG_JOYBTN_DOWN: if (value) hero_toggle_carry(); break;
-    case EGG_JOYBTN_SOUTH: if (value) hero_jump_begin(); else hero_jump_end(); break;
-    case EGG_JOYBTN_WEST: if (value) hero_dig(); break;
+  if (g.dayclock>0.0) switch (btnid) {
+    case EGG_JOYBTN_LEFT: if (value) hero_walk_begin(&g.hero,-1); else if (g.hero.dx<0) hero_walk_end(&g.hero); break;
+    case EGG_JOYBTN_RIGHT: if (value) hero_walk_begin(&g.hero,1); else if (g.hero.dx>0) hero_walk_end(&g.hero); break;
+    case EGG_JOYBTN_DOWN: if (value) hero_toggle_carry(&g.hero); break;
+    case EGG_JOYBTN_SOUTH: if (value) hero_jump_begin(&g.hero); else hero_jump_end(&g.hero); break;
+    case EGG_JOYBTN_WEST: if (value) hero_dig(&g.hero); break;
   }
 }
 
@@ -360,17 +205,42 @@ void egg_client_update(double elapsed) {
     }
     if (eventc<16) break;
   }
-  hero_update(elapsed);
+  if (g.dayclock>0.0) {
+    if ((g.dayclock-=elapsed)<=0.0) {
+      g.dayclock=0.0;
+      hero_jump_end(&g.hero);
+      hero_walk_end(&g.hero);
+      hero_update_noninteractive(&g.hero,elapsed);
+    } else {
+      // Normal game update.
+      hero_update(&g.hero,elapsed);
+    }
+  } else {
+    hero_update_noninteractive(&g.hero,elapsed);
+  }
 }
 
 /* Render.
  ************************************************************************/
 
 void egg_client_render() {
-  copy_framebuffer(fb,terrain);
-  hero_render();
-  //TODO sprites
-  //TODO overlay
-  // Commit to main output.
-  egg_texture_upload(1,SCREENW,SCREENH,SCREENW<<2,EGG_TEX_FMT_RGBA,fb,sizeof(fb));
+  copy_framebuffer(g.fb,g.terrain);
+  hero_render(g.fb,&g.hero);
+  coffins_render(g.fb,g.coffinv,g.coffinc);
+  
+  // Sun starts centered in the top left corner, and ends just below the bottom left corner.
+  const int sunw=5;
+  const int sunh=9;
+  const int sunpath_range=SCREENH+((sunh+1)>>1);
+  int sunp=(g.dayclock*sunpath_range)/DAY_LENGTH;
+  if (sunp<0) sunp=0;
+  else if (sunp>sunpath_range) sunp=sunpath_range;
+  int suny=SCREENH-sunp;
+  blit_sprite(g.fb,0,suny,g.spritebits,22,11,sunw,sunh,0);
+  
+  if (g.dayclock<=0.0) {
+    blit_sprite(g.fb,(SCREENW>>1)-21,10,g.spritebits,27,11,43,10,0);
+  }
+  
+  egg_texture_upload(1,SCREENW,SCREENH,SCREENW<<2,EGG_TEX_FMT_RGBA,g.fb,sizeof(g.fb));
 }

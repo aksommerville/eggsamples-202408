@@ -77,13 +77,13 @@ Expect that cost to scale with the size of the framebuffer.
 - [ ] A game in C++. Not going to bother with C++-conventional libs, but do at least demonstrate it can be done.
 - [ ] Other Wasmable languages: Rust, Go, Zig... Pascal? Fortran?
 - [ ] Realistic OpenGL demo. Hit as much of GLES2 as we can manage.
-- [ ] Client-side rendering in a laughably small framebuffer.
+- [x] Client-side rendering in a laughably small framebuffer.
 - [ ] 3d graphics with triangles. I'm really curious how far one can take that. Can I write a StarFox clone?
 - [x] inkeep: Hide cursor until first event. It's misleading, I catch myself clicking out of the window because the cursor is there in the middle.
 - [x] malloc.c produces a 16-MB intermediate file. No harm, but can we prevent that? ...no doesn't seem so
 - [ ] Touch events get processed twice (presumably being aliased as mouse by the browser)
 - [ ] Make a separate "eggzotics" repo for projects that target Egg in addition to some highly-constrained native platform (Playdate, TinyArcade, ...)
-- [ ] Include an HTML build of each game such that they're playable from within Github.
+- [x] Include an HTML build of each game such that they're playable from within Github.
 
 ## Game Ideas
 
