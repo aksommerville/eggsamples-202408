@@ -84,7 +84,7 @@ int menu_option_add(struct menu *menu,const char *src,int srcc) {
 
 static void menu_option_motion(struct menu *menu,int dx,int dy) {
   if (dy) {
-    if (menu->optionc<2) return;
+    if (menu->optionc<1) return;
     menu->optionp+=dy;
     if (menu->optionp<0) menu->optionp=menu->optionc-1;
     else if (menu->optionp>=menu->optionc) menu->optionp=0;

@@ -66,6 +66,7 @@ struct menu *menu_new_framebuffer(struct menu *parent);
 struct menu *menu_new_listres(struct menu *parent);
 struct menu *menu_new_strings(struct menu *parent);
 struct menu *menu_new_persistence(struct menu *parent);
+struct menu *menu_new_regression(struct menu *parent);
 
 int menu_option_add(struct menu *menu,const char *src,int srcc);
 void menu_option_event(struct menu *menu,const union egg_event *event);

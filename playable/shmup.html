@@ -5,6 +5,7 @@
 canvas {
 width: 640px;
 image-rendering: pixelated;
+background-color: #000;
 }
 </style>
 <egg-rom style="display:none">
@@ -1534,6 +1535,7 @@ class Render {
   
     this.u_raw_screensize = 0;
     this.u_raw_alpha = 0;
+    this.u_raw_tint = 0;
     this.u_decal_screensize = 0;
     this.u_decal_sampler = 0;
     this.u_decal_alpha = 0;
@@ -1611,6 +1613,7 @@ class Render {
     this.gl.bindTexture(this.gl.TEXTURE_2D, srctex.texid);
     this.gl.uniform4f(this.u_decal_tint, 0.0, 0.0, 0.0, 0.0);
     this.gl.uniform1f(this.u_decal_alpha, 1.0);
+    this.gl.disable(this.gl.BLEND);
     this.gl.enableVertexAttribArray(0);
     this.gl.enableVertexAttribArray(1);
     this.gl.vertexAttribPointer(0, 2, this.gl.SHORT, false, 12, 0);
@@ -1618,6 +1621,7 @@ class Render {
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     this.gl.disableVertexAttribArray(0);
     this.gl.disableVertexAttribArray(1);
+    this.gl.enable(this.gl.BLEND);
   }
   
   /*------------------------ Public API entry points ---------------------------------*/
@@ -1737,6 +1741,7 @@ class Render {
     this.gl.viewport(0, 0, texture.w, texture.h);
     this.gl.uniform2f(this.u_raw_screensize, texture.w, texture.h);
     this.gl.uniform1f(this.u_raw_alpha, this.alpha);
+    this.gl.uniform4f(this.u_raw_tint, this.tr, this.tg, this.tb, this.ta);
     
     const aposv = this.vbufs16;
     const colorv = this.vbufu8;
@@ -1765,6 +1770,7 @@ class Render {
     this.gl.viewport(0, 0, texture.w, texture.h);
     this.gl.uniform2f(this.u_raw_screensize, texture.w, texture.h);
     this.gl.uniform1f(this.u_raw_alpha, this.alpha);
+    this.gl.uniform4f(this.u_raw_tint, this.tr, this.tg, this.tb, this.ta);
     
     const len = c * 8;
     const srcview = this.egg.exec.getView(v, len);
@@ -2001,6 +2007,7 @@ class Render {
     this.gl.useProgram(this.pgm_raw);
     this.u_raw_screensize = this.gl.getUniformLocation(this.pgm_raw, "screensize");
     this.u_raw_alpha = this.gl.getUniformLocation(this.pgm_raw, "alpha");
+    this.u_raw_tint = this.gl.getUniformLocation(this.pgm_raw, "tint");
     this.gl.bindAttribLocation(this.pgm_raw, 0, "apos");
     this.gl.bindAttribLocation(this.pgm_raw, 1, "acolor");
   
@@ -2068,23 +2075,24 @@ Render.vsrc_raw = `
   #version 100
   precision mediump float;
   uniform vec2 screensize;
+  uniform vec4 tint;
+  uniform float alpha;
   attribute vec2 apos;
   attribute vec4 acolor;
   varying vec4 vcolor;
   void main() {
     vec2 npos=(apos*2.0)/screensize-1.0;
     gl_Position=vec4(npos,0.0,1.0);
-    vcolor=acolor;
+    vcolor=vec4(mix(acolor.rgb,tint.rgb,tint.a),acolor.a*alpha);
   }
 `;
 
 Render.fsrc_raw = `
   #version 100
   precision mediump float;
-  uniform float alpha;
   varying vec4 vcolor;
   void main() {
-    gl_FragColor=vec4(vcolor.rgb,vcolor.a*alpha);
+    gl_FragColor=vcolor;
   }
 `;
  
@@ -2466,7 +2474,14 @@ class Input {
       (1 << Input.EGG_EVENT_TOUCH)|
       // MMOTION, MBUTTON, MWHEEL, TEXT, ACCEL: off by default
     0;
-    // TODO Turn off JOY, KEY, and TOUCH if we can tell they aren't supported.
+    this.gamepadSupported = !!window.navigator.getGamepads;
+    this.keyboardSupported = true; // TODO Is this knowable? (eg are we on a smartphone?)
+    this.touchSupported = true; // ''
+    this.mouseSupported = true; // ''
+    this.accelerometerSupported = true; // ''
+    if (!this.gamepadSupported) this.evtmask &= ~(1 << Input.EGG_EVENT_JOY);
+    if (!this.keyboardSupported) this.evtmask &= ~(1 << Input.EGG_EVENT_KEY);
+    if (!this.touchSupported) this.evtmask &= ~(1 << Input.EGG_EVENT_TOUCH);
     
     this.cursorVisible = false;
     this.cursorDesired = true; // Should be visible when enabled. (egg_show_cursor())
@@ -2612,6 +2627,7 @@ class Input {
         if (pv === nx) continue;
         local.axes[i] = nx;
         this.pushEvent([Input.EGG_EVENT_JOY, local.devid, local.axisBase + i, nx]);
+        this.pushEvent([Input.EGG_EVENT_RAW, local.devid, local.axisBase + i, nx]);
       }
       
       for (let i=local.buttons.length; i-->0; ) {
@@ -2620,6 +2636,7 @@ class Input {
         if (pv === nx) continue;
         local.buttons[i] = nx;
         this.pushEvent([Input.EGG_EVENT_JOY, local.devid, local.buttonBase + i, nx]);
+        this.pushEvent([Input.EGG_EVENT_RAW, local.devid, local.buttonBase + i, nx]);
       }
     }
   }
@@ -2647,6 +2664,7 @@ class Input {
             buttonBase,
           };
           this.pushEvent([Input.EGG_EVENT_JOY, e.gamepad.index + 1, 0, 1]);
+          this.pushEvent([Input.EGG_EVENT_RAW, e.gamepad.index + 1, 0, 1]);
         } break;
         
       case "gamepaddisconnected": {
@@ -2654,6 +2672,7 @@ class Input {
           if (local) {
             delete this.gamepads[e.gamepad.index];
             this.pushEvent([Input.EGG_EVENT_JOY, local.devid, 0, 0]);
+            this.pushEvent([Input.EGG_EVENT_RAW, local.devid, 0, 0]);
           }
         } break;
     }
@@ -2967,20 +2986,27 @@ class Input {
       if (!(this.evtmask & bit)) return 0;
       this.evtmask &= ~bit;
     }
-    //TODO Reject changes if we can tell they aren't supported.
     switch (type) {
       case Input.EGG_EVENT_RAW: break;
-      case Input.EGG_EVENT_JOY: break;
-      case Input.EGG_EVENT_KEY: break;
-      case Input.EGG_EVENT_TEXT: break;
+      case Input.EGG_EVENT_JOY: {
+          if (!this.gamepadSupported) return 0;
+        } break;
+      case Input.EGG_EVENT_KEY:
+      case Input.EGG_EVENT_TEXT: {
+          if (!this.keyboardSupported) return 0;
+        } break;
       case Input.EGG_EVENT_MMOTION:
       case Input.EGG_EVENT_MBUTTON:
       case Input.EGG_EVENT_MWHEEL: {
+          if (!this.mouseSupported) return 0;
           const mouseEvents = (1 << Input.EGG_EVENT_MMOTION) | (1 << Input.EGG_EVENT_MBUTTON) | (1 << Input.EGG_EVENT_MWHEEL);
           this._checkCursorVisibility(this.evtmask & mouseEvents);
         } break;
-      case Input.EGG_EVENT_TOUCH: break;
+      case Input.EGG_EVENT_TOUCH: {
+          if (!this.touchSupported) return 0;
+        } break;
       case Input.EGG_EVENT_ACCEL: {
+          if (!this.accelerometerSupported) return 0;
           if (enable) {
             this.accelerometerEnable();
           } else {
@@ -3152,7 +3178,7 @@ Input.STANDARD_BUTTON_USAGE = [
 ];
 // Do not edit! Generated from src/opt/synth/synth_builtin.c.
 const Instruments = [
-{"mode":"sub","subQ1":0,"subQ2":0,"subGain":1,"levelTiny":12},
+{"mode":"fmrel","fmRate":2,"fmRangeScale":4,"fmRangeEnv":36808,"levelTiny":132},
 0,
 {"mode":"fmrel","fmRate":2,"fmRangeScale":4,"fmRangeEnv":36808,"levelTiny":132},
 {"mode":"fmrel","fmRate":1.5,"fmRangeScale":4,"fmRangeEnv":65410,"levelTiny":139},
@@ -3731,6 +3757,7 @@ class Audio {
     node.connect(gain);
     gain.connect(this.context.destination);
     node.start(when);
+    node.eggStartTime = when;
     this.soundEffects.push(node);
     node.onended = () => {
       const p = this.soundEffects.indexOf(node);
@@ -3739,14 +3766,23 @@ class Audio {
   }
   
   egg_audio_event(chid, opcode, a, b) {
-    console.log(`TODO egg_audio_event`, { chid, opcode, a, b });
+    switch (opcode) {
+      case 0x80: this.endNote(chid, a, b); break;
+      case 0x90: this.playNote(chid, a, b, 5.0, 0/*this.context.currentTime*/); break;
+    }
   }
   
-  egg_audio_get_playhead() {//TODO
-    return -1;
+  egg_audio_get_playhead() {
+    if (!this.song) return -1;
+    let elapsed = this.context.currentTime - this.song.startTime;
+    if (this.song.durations) elapsed %= this.song.durations;
+    return (elapsed * 1000) / this.song.msperqnote;
   }
   
-  egg_audio_set_playhead(beat) {//TODO
+  egg_audio_set_playhead(beat) {
+    if (!this.song) return;
+    this.stopVoices();
+    //TODO Set playhead. This is actually pretty tough to manage. Punt.
   }
   
   /* Internals.
@@ -3755,6 +3791,10 @@ class Audio {
   endSong() {
     if (!this.song) return;
     this.song = null;
+    this.stopVoices();
+  }
+  
+  stopVoices() {
     for (const voice of this.voices) voice.release();
     for (let chid=0; chid<8; chid++) {
       if (this.channels[chid]) {
@@ -3762,7 +3802,14 @@ class Audio {
         this.channels[chid] = null;
       }
     }
-    //TODO Cancel scheduled notes.
+    const now = this.context.currentTime;
+    for (let i=this.soundEffects.length; i-->0; ) {
+      const node = this.soundEffects[i];
+      if (node.eggStartTime && (node.eggStartTime >= now)) {
+        node.disconnect();
+        this.soundEffects.splice(i, 1);
+      }
+    }
   }
   
   beginSong() {
@@ -3797,12 +3844,27 @@ class Audio {
     return v;
   }
   
+  endNote(chid, noteid, velocity) {
+    const p = this.voices.findIndex(v => ((v.eggChid === chid) && (v.eggNoteid = noteid)));
+    if (p < 0) return;
+    const voice = this.voices[p];
+    voice.eggChid = -1;
+    voice.eggNoteid = -1;
+    voice.release();
+  }
+  
   // (velocity) in 0..127 like MIDI. (when) in AudioContext time.
   playNote(chid, noteid, velocity, durs, when) {
-    const channel = this.channels[chid];
+    let channel = this.channels[chid];
     //console.log(`Audio.playNote`, { chid, noteid, velocity, durs, when, channel });
-    if (!channel) return;
-    channel.playNote(this, noteid, velocity / 127.0, durs, when);
+    if (!channel) {
+      if ((chid < 0) || (chid >= 16)) return;
+      channel = this.channels[chid] = new Channel(this, 0x00, 0x80, 0x80);
+    }
+    const voice = channel.playNote(this, noteid, velocity / 127.0, durs, when);
+    if (!voice) return;
+    voice.eggChid = chid;
+    voice.eggNoteid = noteid;
   }
   
   // (v) in 0..0x3fff like MIDI. (when) in AudioContext time.
@@ -3861,6 +3923,8 @@ class Song {
     this.startTime = audio.context.currentTime;
     this.readp = this.startp;
     this.readTime = this.startTime;
+    this.durations = 0; // Zero until the first loop.
+    this.durationPending = 0;
   }
   
   isResource(qual, songid) {
@@ -3882,6 +3946,7 @@ class Song {
       // Delay?
       if (typeof(event) === "number") {
         this.readTime += event;
+        if (!this.durations) this.durationPending += event;
         continue;
       }
       
@@ -3899,6 +3964,7 @@ class Song {
     
     // Zero or end of input is End of Song.
     if (!lead) {
+      if (!this.durations) this.durations = this.durationPending;
       if (!this.repeat) return null;
       this.readp = this.loopp;
       // Must delay a little, in case the song has no explicit delays, so we don't loop forever.
@@ -4023,46 +4089,52 @@ class Channel {
           voice.oscillateShape("square", audio.hzByNoteid[noteid], this.wheelCents);
           voice.plateauLevel(when, attackTime, level, durs, releaseTime);
           voice.begin();
-        } break;
+          return voice;
+        }
         
       case "wave": {
           const voice = new Voice(audio);
           voice.oscillateWave(this.wave, audio.hzByNoteid[noteid], this.wheelCents);
           voice.tinyEnv(when, this.levelTiny, durs, velocity, this.volume * this.master);
           voice.begin();
-        } break;
+          return voice;
+        }
         
       case "rock": {
           const voice = new Voice(audio);
           voice.oscillateMix(this.wave, this.mix, audio.hzByNoteid[noteid], this.wheelCents);
           voice.tinyEnv(when, this.levelTiny, durs, velocity, this.volume * this.master);
           voice.begin();
-        } break;
+          return voice;
+        }
         
       case "fmrel": {
           const voice = new Voice(audio);
           voice.oscillateFmRelative(audio.hzByNoteid[noteid], this.wheelCents, this.fmRate, this.fmRangeScale, this.fmRangeEnv);
           voice.tinyEnv(when, this.levelTiny, durs, velocity, this.volume * this.master);
           voice.begin();
-        } break;
+          return voice;
+        }
         
       case "fmabs": {
           const voice = new Voice(audio);
           voice.oscillateFmAbsolute(audio.hzByNoteid[noteid], this.wheelCents, this.fmRate, this.fmRangeScale, this.fmRangeEnv);
           voice.tinyEnv(when, this.levelTiny, durs, velocity, this.volume * this.master);
           voice.begin();
-        } break;
+          return voice;
+        }
         
       case "sub": {
           const voice = new Voice(audio);
           voice.oscillateSubtractive(audio.hzByNoteid[noteid], this.wheelCents, this.subQ1, this.subQ2, this.subGain);
           voice.tinyEnv(when, this.levelTiny, durs, velocity, this.volume * this.master);
           voice.begin();
-        } break;
+          return voice;
+        }
         
       case "fx": {
-          this.fxNote(audio, when, noteid, velocity, durs);
-        } break;
+          return this.fxNote(audio, when, noteid, velocity, durs);
+        }
     }
   }
   
@@ -4176,6 +4248,7 @@ class Channel {
     voice.oscillateFmRelative(this.audio.hzByNoteid[noteid], this.wheelCents, this.fmRate, this.fmRangeScale, this.fmRangeEnv, this.fmLfoOut);
     voice.tinyEnv(when, this.levelTiny, durs, velocity, 1);
     voice.begin(this.fxAttach);
+    return voice;
   }
 }
 
@@ -4232,6 +4305,21 @@ class Voice {
   }
   
   release() {
+    if (!this.audio || !this.audio.context) {
+      this.terminate();
+      return;
+    }
+    const now = this.audio.context.currentTime;
+    if (this.startTime && (this.startTime <= now)) {
+      this.terminate();
+      return;
+    }
+    const endTime = now + 0.100;
+    if (this.env) {
+      this.env.gain.setValueAtTime(this.env.gain.value, now);
+      this.env.gain.linearRampToValueAtTime(0, endTime);
+    }
+    this.endTime = endTime;
   }
   
   begin(dst) {
@@ -4360,6 +4448,8 @@ class Voice {
   }
   
   plateauLevel(when, attackTimeRel, peakLevel, sustainTimeRel, releaseTimeRel) {
+    this.startTime = when;
+    if (!when) when = this.audio.context.currentTime;
     this.endTime = when + attackTimeRel + sustainTimeRel + releaseTimeRel;
     this.env = new GainNode(this.audio.context);
     this.env.gain.setValueAtTime(0, 0);
@@ -4379,6 +4469,8 @@ class Voice {
    *   0x07 Release time: 0x00=Short .. 0x07=Long
    */
   tinyEnv(when, v, durs, velocity, trim) {
+    this.startTime = when;
+    if (!when) when = this.audio.context.currentTime;
     let attackTimeHi;
     switch (v & 0x38) {
       case 0x00: attackTimeHi = 0.005; break;

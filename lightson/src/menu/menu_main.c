@@ -11,6 +11,7 @@ static void _main_option(struct menu *menu) {
     case 2: menu_new_audio(menu); break;
     case 3: menu_new_store(menu); break;
     case 4: menu_new_misc(menu); break;
+    case 5: menu_new_regression(menu); break;
   }
 }
  
@@ -28,6 +29,7 @@ struct menu *menu_new_main() {
     (menu_option_add(menu,"Audio",5)<0)||
     (menu_option_add(menu,"Store",5)<0)||
     (menu_option_add(menu,"Misc",4)<0)||
+    (menu_option_add(menu,"Regression",10)<0)||
   0) {
     menu_del(menu);
     return 0;
