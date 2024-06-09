@@ -153,6 +153,7 @@ void hero_walk_end(struct hero *hero) {
 void hero_jump_begin(struct hero *hero) {
   if (!hero->seated&&(hero->coyote<=0.0)) return;
   if (hero->digclock>0.0) return;
+  egg_audio_play_sound(0,SND_JUMP,0x10000,0);
   hero->jump=1;
   hero->jumppower=150.0;
   hero->gravity=0.0;
@@ -171,6 +172,7 @@ void hero_toggle_carry(struct hero *hero) {
     if (!coffin) {
       // oh no... what to do?
     } else {
+      egg_audio_play_sound(0,SND_UNCARRY,0x10000,0);
       hero->carrying=0;
       coffin->x=((int)hero->x)-(COFFIN_WIDTH>>1);
       coffin->y=(int)hero->y-COFFIN_HEIGHT-11;
@@ -179,8 +181,10 @@ void hero_toggle_carry(struct hero *hero) {
   } else {
     int p=coffin_find(g.coffinv,g.coffinc,(int)hero->x,(int)hero->y-1);
     if (p<0) {
+      egg_audio_play_sound(0,SND_CARRY_REJECT,0x10000,0);
       // Nothing to pick up here.
     } else {
+      egg_audio_play_sound(0,SND_CARRY,0x10000,0);
       hero->carrying=1;
       int cx=g.coffinv[p].x;
       coffin_remove(p);
@@ -196,6 +200,10 @@ void hero_dig(struct hero *hero) {
   hero->digclock=0.400;
   int x=(int)hero->x;
   int y=(int)hero->y;
-  choose_and_move_dirt(x,y,hero->facex);
-  hero_check_seated(hero,1);
+  if (choose_and_move_dirt(x,y,hero->facex)) {
+    egg_audio_play_sound(0,SND_DIG,0x10000,0);
+    hero_check_seated(hero,1);
+  } else {
+    egg_audio_play_sound(0,SND_DIG_REJECT,0x10000,0);
+  }
 }

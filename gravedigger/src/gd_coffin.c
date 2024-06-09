@@ -39,7 +39,7 @@ static int any_sky(int x,int y,int w,int h) {
   return 0;
 }
  
-static int coffin_is_buried(const struct coffin *coffin) {
+int coffin_is_buried(const struct coffin *coffin) {
   return !(
     any_sky(coffin->x-1,coffin->y,1,COFFIN_HEIGHT)||
     any_sky(coffin->x,coffin->y-1,COFFIN_WIDTH,1)||

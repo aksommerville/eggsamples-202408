@@ -31,6 +31,8 @@ int egg_client_init() {
   g.dayclock=DAY_LENGTH;
   g.vampire_flop_clock=0;
   
+  egg_audio_play_song(0,1,0,1);
+  
   return 0;
 }
 
@@ -101,7 +103,7 @@ static const struct digzoned {
           { 0, 4},{ 1, 4},{ 2, 4},
 };
  
-void choose_and_move_dirt(int x,int y,int dx) {
+int choose_and_move_dirt(int x,int y,int dx) {
   if (x<0) x=0; else if (x>=SCREENW) x=SCREENW-1;
   if (y<0) y=0; else if (y>=SCREENH) y=SCREENH-1;
   
@@ -118,7 +120,7 @@ void choose_and_move_dirt(int x,int y,int dx) {
     if ((dirty<0)||(dirty>=SCREENH)) continue;
     if (COLOR_IS_DIRT(g.terrain[dirty*SCREENW+dirtx])) dirtc++;
   }
-  if (!dirtc) return; // No dirt here (must be standing on the bottom of screen?)
+  if (!dirtc) return 0; // No dirt here (must be standing on the bottom of screen?)
   
   /* Dirt is deposited in a fixed count of columns, two columns backward from (x), starting two rows upward of (y).
    * Measure the available space in each of those four columns.
@@ -137,7 +139,7 @@ void choose_and_move_dirt(int x,int y,int dx) {
     columnv[columni]=find_highest_dirt(g.terrain,columnx,columny,1,columnh);
     vacantc+=columnv[columni];
   }
-  if (!vacantc) return; // Nowhere to put the dirt.
+  if (!vacantc) return 0; // Nowhere to put the dirt.
   if (vacantc<dirtc) dirtc=vacantc; // Dig up only what we have a new home for.
   
   /* Run over the candidates again, until (dirtc) hits zero.
@@ -162,6 +164,7 @@ void choose_and_move_dirt(int x,int y,int dx) {
   }
   
   repair_terrain(x-8,16);
+  return 1;
 }
 
 /* Event dispatch.
@@ -211,6 +214,19 @@ void egg_client_update(double elapsed) {
       hero_jump_end(&g.hero);
       hero_walk_end(&g.hero);
       hero_update_noninteractive(&g.hero,elapsed);
+      int victory=1;
+      if (g.hero.carrying) {
+        victory=0;
+      } else {
+        const struct coffin *coffin=g.coffinv;
+        int i=g.coffinc;
+        for (;i-->0;coffin++) if (!coffin_is_buried(coffin)) {
+          victory=0;
+          break;
+        }
+      }
+      if (victory) egg_audio_play_sound(0,SND_VICTORY,0x10000,0);
+      else egg_audio_play_sound(0,SND_FAILURE,0x10000,0);
     } else {
       // Normal game update.
       hero_update(&g.hero,elapsed);

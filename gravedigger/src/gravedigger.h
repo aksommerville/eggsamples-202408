@@ -19,8 +19,17 @@
 
 #define DAY_LENGTH 60.0 /* seconds */
 
+#define SND_DIG 1
+#define SND_DIG_REJECT 2
+#define SND_CARRY 3
+#define SND_CARRY_REJECT 4
+#define SND_UNCARRY 5
+#define SND_JUMP 6
+#define SND_VICTORY 7
+#define SND_FAILURE 8
+
 // main.c
-void choose_and_move_dirt(int x,int y,int dx);
+int choose_and_move_dirt(int x,int y,int dx); // => nonzero if changed
 void repair_terrain(int x,int w);
 
 // gd_render.c
@@ -67,6 +76,7 @@ struct coffin {
   int buried;
 };
 int generate_coffins(struct coffin *dst,int dsta); // => dstc (0..dsta)
+int coffin_is_buried(const struct coffin *coffin);
 void coffins_render(uint32_t *dst,struct coffin *coffinv,int coffinc);
 void coffins_force_valid(struct coffin *coffinv,int coffinc); // Move coffins down or dirt up to ensure no gaps or overlap against terrain.
 int test_coffin_pixel(int x,int y);
