@@ -13,6 +13,7 @@
   #include <math.h>
   #include <time.h>
   static inline void srand_auto() { srand(time(0)); }
+  static inline void malloc_log_stats() {}
 #else
 
 #define INT_MIN (int)(0x80000000)
