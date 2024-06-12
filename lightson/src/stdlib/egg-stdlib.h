@@ -25,7 +25,7 @@
 #define HEAP_SIZE (16<<20)
 
 /* Our malloc et al work about like the standard ones.
- * We do allow allocated zero-length chunks.
+ * We do allow allocating zero-length chunks.
  * Invalid free() will quietly noop, if we can tell it's invalid -- free(0) should always be safe.
  * Chunks will always align to 4-byte boundaries.
  */
@@ -33,6 +33,7 @@ void *malloc(int c);
 void free(void *p);
 void *realloc(void *p,int c);
 void *calloc(int c,int size);
+void malloc_log_stats(); // Dump some details about memory usage via egg_log.
 
 void *memcpy(void *dst,const void *src,int c);
 void *memmove(void *dst,const void *src,int c);

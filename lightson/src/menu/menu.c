@@ -83,6 +83,7 @@ int menu_option_add(struct menu *menu,const char *src,int srcc) {
 }
 
 static void menu_option_motion(struct menu *menu,int dx,int dy) {
+  egg_audio_play_sound(0,75,0x00010000,0);
   if (dy) {
     if (menu->optionc<1) return;
     menu->optionp+=dy;
@@ -99,6 +100,7 @@ static void menu_option_motion(struct menu *menu,int dx,int dy) {
 static void menu_option_activate(struct menu *menu) {
   if (!menu->on_option) return;
   if ((menu->optionp<0)||(menu->optionp>=menu->optionc)) return;
+  egg_audio_play_sound(0,78,0x00010000,0);
   menu->on_option(menu);
 }
 

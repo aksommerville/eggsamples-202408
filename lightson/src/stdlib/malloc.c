@@ -15,6 +15,27 @@ static struct {
   int heap[HEAP_SIZE>>2];
 } gmalloc={0};
 
+/* Stats.
+ */
+ 
+void egg_log(const char *fmt,...);
+ 
+void malloc_log_stats() {
+  int total=0,heapp=0;
+  while (heapp<HEAP_SIZE>>2) {
+    if (gmalloc.heap[heapp]<0) {
+      heapp-=gmalloc.heap[heapp];
+    } else if (gmalloc.heap[heapp]>0) {
+      total+=gmalloc.heap[heapp];
+      heapp+=gmalloc.heap[heapp];
+    } else {
+      break;
+    }
+  }
+  total<<=2;
+  egg_log("malloc: limit=%d waterline=%d allocated=%d",HEAP_SIZE,gmalloc.heapc<<2,total);
+}
+
 /*--------------------- Public entry points. ---------------------------------*/
 
 void *malloc(int c) {

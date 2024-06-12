@@ -23,6 +23,7 @@ double total_game_time=0.0;
 double start_real_time=0.0;
  
 void egg_client_quit() {
+  malloc_log_stats();
 }
 
 void lightson_default_event_mask(int log) {
@@ -73,6 +74,7 @@ void pop_menu() {
     egg_request_termination();
     return;
   }
+  egg_audio_play_sound(0,71,0x00010000,0);
   struct menu *front=menu,*parent=0;
   while (front->child) {
     parent=front;
