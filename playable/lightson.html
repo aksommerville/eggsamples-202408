@@ -3032,6 +3032,7 @@ class Render {
     this.gl.useProgram(this.pgm_raw);
     this.u_raw_screensize = this.gl.getUniformLocation(this.pgm_raw, "screensize");
     this.u_raw_alpha = this.gl.getUniformLocation(this.pgm_raw, "alpha");
+    this.u_raw_tint = this.gl.getUniformLocation(this.pgm_raw, "tint");
     this.gl.bindAttribLocation(this.pgm_raw, 0, "apos");
     this.gl.bindAttribLocation(this.pgm_raw, 1, "acolor");
   
@@ -3462,8 +3463,32 @@ function displayError(error) {
 window.addEventListener("load", () => {
   let rom;
   const emb = document.querySelector("egg-rom");
-  if (emb) startEgg(new Rom(emb.innerText));
-  else {
+  if (emb) {
+    // We have an embedded ROM. Easiest case, and unambiguous what to do.
+    startEgg(new Rom(emb.innerText));
+  } else {
+    // If we were launched with '?delivery=message', wait for our parent to postMessage with the serial ROM.
+    const query = window.location.search || "";
+    if (query.startsWith("?")) {
+      const qo = {};
+      for (const encoded of query.substring(1).split('&')) {
+        const sepp = encoded.indexOf('=');
+        if (sepp >= 0) {
+          const k = decodeURIComponent(encoded.substring(0, sepp));
+          const v = decodeURIComponent(encoded.substring(sepp + 1));
+          qo[k] = v;
+        } else {
+          qo[decodeURIComponent(encoded)] = "";
+        }
+      }
+      if (qo.delivery === "message") {
+        window.addEventListener("message", event => {
+          startEgg(new Rom(event.data));
+        });
+        return;
+      }
+    }
+    // Assume the dev server is running and ask it for a ROM.
     window.fetch("/api/roms").then(rsp => {
       if (!rsp.ok) throw rsp;
       return rsp.json();
@@ -3484,6 +3509,7 @@ window.addEventListener("load", () => {
     });
   }
 });
+
 /* Input.js
  */
  
