@@ -43,6 +43,7 @@ all:$(ROM)
 run:run-rom
 run-rom:$(ROM);$(EGG) $(ROM)
 serve:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/www
+edit:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/editor --runtime=$(EGG_SDK)/src/www --override=src/editor --data=src/data
 clean:;rm -rf $(MIDDIR) $(OUTDIR)
 
 #-----------------------------------------------------------------

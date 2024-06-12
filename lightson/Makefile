@@ -79,4 +79,6 @@ run-bundled:$(EXE_BUNDLED);$(EXE_BUNDLED)
 serve:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/www
 # Can add `--external` to serve on external interfaces, eg to test on your phone. I don't recommend leaving that up long.
 
+edit:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/editor --runtime=$(EGG_SDK)/src/www --override=src/editor --data=src/data
+
 clean:;rm -rf $(MIDDIR) $(OUTDIR)

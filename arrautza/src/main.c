@@ -1,7 +1,8 @@
-#include "legend.h"
+#include "arrautza.h"
+#include "inkeep/inkeep.h"
 #include <egg/hid_keycode.h>
 
-struct legend legend={0};
+struct globals g={0};
 
 void egg_client_quit() {
   inkeep_quit();

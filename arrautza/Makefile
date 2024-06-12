@@ -45,6 +45,8 @@ $(MIDDIR)/data/%:src/data/%;$(PRECMD) cp $< $@
 # Can add `--external` to serve on external interfaces, eg to test on your phone. Don't leave that on.
 serve:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/www
 
+edit:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/editor --runtime=$(EGG_SDK)/src/www --override=src/editor --data=src/data
+
 #-----------------------------------------
 # Everything below this point should just work, all configuration is above.
 

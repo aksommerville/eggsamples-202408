@@ -1,9 +1,12 @@
 title=Hard Boiled
-titleString=2
-author=AK Sommerville
-timestamp=2024-05-16
-iconImage=1
 language=en
-
-# Also hard-coded at src/hardboiled.h.
 framebuffer=240x135
+iconImage=1
+author=AK Sommerville
+copyright=(c) 2024 AK Sommerville
+description=Gather clues to figure out who done it.
+genre=Visual Novel
+timestamp=2024-05-16
+freedom=free
+players=1
+titleString=2
