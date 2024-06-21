@@ -7,6 +7,7 @@ This is intended to be generic enough that future projects can use it as-is (or 
 Starts with the map image. ROWC (22) lines of COLC*2 (80) hexadecimal digits.
 The map image's shape must be exact, and must be the very first thing in the file.
 (Let the compiler be dumb about it).
+Map image must be terminated by EOF or a blank line.
 
 After the map image, each non-empty line is a command.
 '#' starts a line comment, permitted after real lines in addition to full line.
