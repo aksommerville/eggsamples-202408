@@ -39,9 +39,17 @@ if (typespath) {
 
 function composeFile(src) {
   let dst = "";
-  // First define all the custom types, in the same fashion as standard egg resource types.
-  for (const { name, tid } of types) {
-    dst += `#define EGG_RESTYPE_${name} ${tid}\n`;
+  if (types.length > 0) {
+    // First define all the custom types, in the same fashion as standard egg resource types.
+    for (const { name, tid } of types) {
+      dst += `#define EGG_RESTYPE_${name} ${tid}\n`;
+    }
+    // Then an iterator like EGG_RESTYPE_FOR_EACH, for the custom types only.
+    dst += "#define CUSTOM_RESTYPE_FOR_EACH \\\n";
+    for (const { name } of types) {
+      dst += `  _(${name}) \\\n`;
+    }
+    dst += "  /* This line deliberately left blank. */\n";
   }
   // Then RID_{type}_{name}={id} for each named resource, as reported via stdin. eg "image 00 2 font_tiles"
   for (let srcp=0; srcp<src.length; ) {
