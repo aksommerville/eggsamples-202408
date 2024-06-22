@@ -230,19 +230,18 @@ export class MapCanvasUi {
   redrawNeighbor(myrelation, mainp, rel1, ix1, rel2, ix2) {
     const name = this.map.getCommandByKeyword(myrelation);
     if (!name) return;
-    const rtnserial = [];
-    const rid = this.resmgr.ridFromString(name, "map", rtnserial);
-    if (!rid) return;
-    const nmap = new MapRes(rtnserial[0]);
+    const res = this.resmgr.resByString(name, "map");
+    if (!res) return;
+    const nmap = new MapRes(res.serial);
     const imageName = nmap.getCommandByKeyword("image");
     const image = this.resmgr.getImage(imageName);
     if (!image || image.complete) {
       const finished = this.drawMapImage(nmap, image);
-      this.neighbors[mainp] = { rid, image: finished };
+      this.neighbors[mainp] = { rid: res.rid, image: finished };
     } else {
       image.addEventListener("load", () => {
         const finished = this.drawMapImage(nmap, image);
-        this.neighbors[mainp] = { rid, image: finished };
+        this.neighbors[mainp] = { rid: res.rid, image: finished };
         this.renderSoon();
       });
     }
@@ -338,12 +337,12 @@ export class MapCanvasUi {
     const neighbor = this.neighbors[p];
     if (!neighbor) {
       if (!(p & 1)) return; // even indices are diagonal and center -- we only create cardinal neighbors
+      console.log(`*** TODO MapCanvasUi.clickNeighbor: Prompt to create new one ***`);
       return;
     }
-    const entry = this.resmgr.tocEntryById("map", neighbor.rid);
+    const entry = this.resmgr.resById("map", neighbor.rid);
     if (!entry) return;
-    const path = "map/" + entry.name;
-    console.log(`Clicked neighbor ${JSON.stringify(path)}`);
+    const path = entry.path;
     this.bus.broadcast({ type: "open", path, serial: entry.serial });
   }
   

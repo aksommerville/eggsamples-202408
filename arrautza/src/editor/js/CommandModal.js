@@ -138,8 +138,9 @@ export class CommandModal {
     // "TYPE:NAME" for 2-byte rid.
     const colonp = src.indexOf(":");
     if (colonp >= 0) {
-      const rid = this.resmgr.ridFromString(src) || 0;
-      return [rid >> 8, rid & 0xff];
+      const res = this.resmgr.resByString(src);
+      if (!res) return [0, 0];
+      return [res.rid >> 8, res.rid & 0xff];
     }
     
     // Unknown.
