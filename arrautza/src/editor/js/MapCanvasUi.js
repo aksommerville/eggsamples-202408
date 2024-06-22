@@ -6,19 +6,22 @@ import { Dom } from "./Dom.js";
 import { MagicGlobals } from "./MagicGlobals.js";
 import { MapBus } from "./MapBus.js";
 import { Resmgr } from "./Resmgr.js";
+import { MapRes } from "./MapRes.js";
+import { Bus } from "./Bus.js";
 
 const RENDER_DEBOUNCE_TIME = 50;
 
 export class MapCanvasUi {
   static getDependencies() {
-    return [HTMLCanvasElement, Dom, Window, MapBus, Resmgr];
+    return [HTMLCanvasElement, Dom, Window, MapBus, Resmgr, Bus];
   }
-  constructor(element, dom, window, mapBus, resmgr) {
+  constructor(element, dom, window, mapBus, resmgr, bus) {
     this.element = element;
     this.dom = dom;
     this.window = window;
     this.mapBus = mapBus;
     this.resmgr = resmgr;
+    this.bus = bus;
     
     this.map = null;
     this.ctx = this.element.getContext("2d");
@@ -32,6 +35,7 @@ export class MapCanvasUi {
       colw: 0, // Distance between columns, including spacing if present.
       rowh: 0,
     };
+    this.neighbors = []; // [nw,n,ne,w,null,e,sw,s,se]: {rid,image}
     
     this.mapBusListener = this.mapBus.listen(e => this.onBusEvent(e));
     
@@ -78,8 +82,8 @@ export class MapCanvasUi {
     this.element.width = bounds.width;
     this.element.height = bounds.height;
     this.ctx.clearRect(0, 0, bounds.width, bounds.height);
+    this.redrawNeighbors();
     if (this.map) this.renderMap();
-    //TODO Neighbors.
   }
   
   renderMap() {
@@ -134,6 +138,18 @@ export class MapCanvasUi {
         for (let x=dstx, xi=this.map.w; xi-->0; x+=colstep, vp++) {
           this.ctx.fillStyle = MapCanvasUi.ctab[this.map.v[vp]];
           this.ctx.fillRect(x, y, colw, rowh);
+        }
+      }
+    }
+    if (this.mapBus.visibility.neighbors) {
+      const margin = 10;
+      for (let ny=-1, np=0; ny<=1; ny++) {
+        for (let nx=-1; nx<=1; nx++, np++) {
+          if (!this.neighbors[np]) continue;
+          const srcbits = this.neighbors[np].image;
+          let ndstx = dstx + nx * (dstw + margin);
+          let ndsty = dsty + ny * (dsth + margin);
+          this.ctx.drawImage(srcbits, 0, 0, srcbits.width, srcbits.height, ndstx, ndsty, dstw, dsth);
         }
       }
     }
@@ -197,7 +213,65 @@ export class MapCanvasUi {
   }
   
   redrawNeighbors() {
-    //TODO
+    if (!this.mapBus.visibility.neighbors || !this.map) {
+      this.neighbors = [];
+      return;
+    }
+    this.neighbors = [null, null, null, null, null, null, null, null, null];
+    this.redrawNeighbor("neighborw", 3, "neighborn", 0, "neighbors", 6);
+    this.redrawNeighbor("neighbore", 5, "neighborn", 2, "neighbors", 8);
+    this.redrawNeighbor("neighborn", 1, "neighborw", 0, "neighbore", 2);
+    this.redrawNeighbor("neighbors", 7, "neighborw", 6, "neighbore", 8);
+  }
+  
+  /* If we have a neighbor in direction (myrelation), draw it and store in slot (mainp).
+   * Then, check if that neighbor has neighbors (rel1,rel2) and repeat, if we haven't populated those slots yet.
+   */
+  redrawNeighbor(myrelation, mainp, rel1, ix1, rel2, ix2) {
+    const name = this.map.getCommandByKeyword(myrelation);
+    if (!name) return;
+    const rtnserial = [];
+    const rid = this.resmgr.ridFromString(name, "map", rtnserial);
+    if (!rid) return;
+    const nmap = new MapRes(rtnserial[0]);
+    const imageName = nmap.getCommandByKeyword("image");
+    const image = this.resmgr.getImage(imageName);
+    if (!image || image.complete) {
+      const finished = this.drawMapImage(nmap, image);
+      this.neighbors[mainp] = { rid, image: finished };
+    } else {
+      image.addEventListener("load", () => {
+        const finished = this.drawMapImage(nmap, image);
+        this.neighbors[mainp] = { rid, image: finished };
+        this.renderSoon();
+      });
+    }
+  }
+  
+  // Return a new canvas with an exact-size image of the given map.
+  // Caller must load its tilesheet first and wait for it to finish loading.
+  // Or (tilesheet) may be null to use an imageless fallback.
+  drawMapImage(map, tilesheet) {
+    const tilesize = tilesheet ? (tilesheet.naturalWidth >> 4) : 16;
+    const canvas = document.createElement("CANVAS");
+    canvas.width = map.w * tilesize;
+    canvas.height = map.h * tilesize;
+    const ctx = canvas.getContext("2d");
+    for (let y=0, vp=0, yi=map.h; yi-->0; y+=tilesize) {
+      for (let x=0, xi=map.w; xi-->0; x+=tilesize, vp++) {
+        if (tilesheet) {
+          const srcx = (map.v[vp] & 0xf) * tilesize;
+          const srcy = (map.v[vp] >> 4) * tilesize;
+          ctx.drawImage(tilesheet, srcx, srcy, tilesize, tilesize, x, y, tilesize, tilesize);
+        } else {
+          ctx.fillStyle = MapCanvasUi.ctab[map.v[vp]];
+          ctx.fillRect(x, y, tilesize, tilesize);
+        }
+      }
+    }
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas;
   }
   
   evalOpcode(src) {
@@ -260,19 +334,30 @@ export class MapCanvasUi {
     this.mapBus.setMouse(col, row);
   }
   
+  clickNeighbor(p) {
+    const neighbor = this.neighbors[p];
+    if (!neighbor) {
+      if (!(p & 1)) return; // even indices are diagonal and center -- we only create cardinal neighbors
+      return;
+    }
+    const entry = this.resmgr.tocEntryById("map", neighbor.rid);
+    if (!entry) return;
+    const path = "map/" + entry.name;
+    console.log(`Clicked neighbor ${JSON.stringify(path)}`);
+    this.bus.broadcast({ type: "open", path, serial: entry.serial });
+  }
+  
   onMouseDown(e) {
     const loc = this.assessMousePosition(e.x, e.y);
     switch (loc.which) {
-      case "nw":
-      case "n":
-      case "ne":
-      case "w":
-      case "e":
-      case "sw":
-      case "s":
-      case "se": {
-          console.log(`TODO Enter or create neighbor ${JSON.stringify(loc.which)}`);
-        } break;
+      case "nw": this.clickNeighbor(0); break;
+      case "n": this.clickNeighbor(1); break;
+      case "ne": this.clickNeighbor(2); break;
+      case "w": this.clickNeighbor(3); break;
+      case "e": this.clickNeighbor(5); break;
+      case "sw": this.clickNeighbor(6); break;
+      case "s": this.clickNeighbor(7); break;
+      case "se": this.clickNeighbor(8); break;
       case "": {
           this.mapBus.setMouse(loc.col, loc.row, loc.subx, loc.suby);
           this.mapBus.beginPaint();

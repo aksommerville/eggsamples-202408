@@ -28,10 +28,18 @@
 #define MAPCMD_hero 0x20 /* u16:pt */
 #define MAPCMD_song 0x21 /* u16:songid */
 #define MAPCMD_image 0x22 /* u16:imageid */
+#define MAPCMD_neighborw 0x23 /* u16:mapid */
+#define MAPCMD_neighbore 0x24 /* u16:mapid */
+#define MAPCMD_neighborn 0x25 /* u16:mapid */
+#define MAPCMD_neighbors 0x26 /* u16:mapid */
 #define MAPCMD_FOR_EACH \
   _(hero) \
   _(song) \
-  _(image)
+  _(image) \
+  _(neighborw) \
+  _(neighbore) \
+  _(neighborn) \
+  _(neighbors)
 
 #include "general/general.h"
   
