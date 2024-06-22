@@ -1,0 +1,140 @@
+input.toggle {
+  display: none;
+}
+input.toggle + label {
+  background-color: #ccc;
+  color: #444;
+  border-left: 1px solid #fff;
+  border-top: 1px solid #fff;
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 2px;
+  padding-right: 3px;
+  padding-bottom: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  cursor: pointer;
+}
+input.toggle:checked + label {
+  background-color: #8cf;
+  color: #000;
+  border-left: 1px solid #048;
+  border-top: 1px solid #048;
+  border-right: 1px solid #cef;
+  border-bottom: 1px solid #cef;
+  padding-left: 3px;
+  padding-top: 3px;
+  padding-right: 2px;
+  padding-bottom: 2px;
+}
+input.toggle + label > span {
+  width: 16px;
+  height: 16px;
+  background-image: url('/uibits.png');
+}
+
+.MapEditor {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.MapToolbarUi {
+  min-height: 20px;
+  border-bottom: 1px solid #000;
+  display: flex;
+  flex-direction: row;
+}
+
+.MapToolbarUi .tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #222;
+  background-color: #888;
+  cursor: pointer;
+}
+.MapToolbarUi .tool.selected {
+  background-color: #f80;
+}
+.MapToolbarUi .tool.selected.transient {
+  background-color: #840;
+}
+
+.MapToolbarUi .tool .icon {
+  width: 16px;
+  height: 16px;
+  background-image: url('/uibits.png');
+  background-position-y: -16px;
+}
+
+.MapToolbarUi .tattle {
+  background-color: #000;
+  color: #ff0;
+  font-family: monospace;
+  font-size: 9pt;
+  width: 5em;
+  white-space: pre;
+  text-align: center;
+  user-select: none;
+}
+.MapToolbarUi .tattle.oob {
+  color: #f00;
+}
+
+.MapCanvasUi {
+  flex: 1;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.PaletteModal td {
+  padding: 6px;
+  border: 1px solid #888;
+  cursor: pointer;
+  user-select: none;
+}
+
+.PaletteModal td.highlight {
+  background-color: #ff0;
+}
+
+.CommandsModal {
+  display: flex;
+  flex-direction: column;
+}
+
+.CommandsModal textarea {
+  width: 50vw;
+  height: 50vh;
+}
+
+.CommandsModal .buttonsRow {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  margin-top: 0.5em;
+}
+.CommandsModal .buttonsRow > .spacer {
+  flex: 1;
+}
+.CommandsModal .help {
+  color: #444;
+  font-style: italic;
+}
+
+.CommandModal .verbatim {
+  background-color: #cfc;
+  color: #000;
+  padding: 0.5em;
+}
+.CommandModal .preview {
+  background-color: #000;
+  color: #0f0;
+  padding: 0.5em;
+}

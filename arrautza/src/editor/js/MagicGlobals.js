@@ -23,7 +23,7 @@ export class MagicGlobals {
   }
   
   static decode(src) {
-    MagicGlobals.mapcmd = [];
+    MagicGlobals.mapcmd = []; // [opcode,name,args]
     for (let srcp=0, lineno=1; srcp<src.length; lineno++) {
       let nlp = src.indexOf("\n", srcp);
       if (nlp < 0) nlp = src.length;
@@ -34,11 +34,12 @@ export class MagicGlobals {
       //console.log(`${lineno}: ${line}`);
       
       let match;
-      if (match = line.match(/^#define\s+MAPCMD_([a-zA-Z0-9_]+)\s+([0-9a-zA-Z_]+).*$/)) {
+      if (match = line.match(/^#define\s+MAPCMD_([a-zA-Z0-9_]+)\s+([0-9a-zA-Z_]+)(\s\/\*(.*)\*\/)?.*$/)) {
         const name = match[1];
         const opcode = +match[2];
+        const args = (match[4] || "").split(/\s+/g).filter(v => v);
         if (!isNaN(opcode)) {
-          MagicGlobals.mapcmd.push([opcode, name]);
+          MagicGlobals.mapcmd.push([opcode, name, args]);
         }
         continue;
       }
@@ -54,6 +55,7 @@ export class MagicGlobals {
     if (!MagicGlobals.COLC || !MagicGlobals.ROWC) {
       throw new Error(`Expected at least COLC and ROWC to be defined in arrautza.h`);
     }
+    //console.log(`MagicGlobals decoded`, MagicGlobals.mapcmd);
   }
 }
 

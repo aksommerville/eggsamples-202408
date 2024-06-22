@@ -51,7 +51,7 @@ int egg_client_init() {
   //XXX Testing map builder and loader.
   struct map map={0};
   if (map_from_res(&map,0,RID_map_start)>=0) {
-    egg_log("Loaded map. [0,0]=%02x [39,21]=%02x cmd[0]=%02x",map.v[0],map.v[21*COLC+39],map.commands[0]);
+    egg_log("Loaded map. [0,0]=%02x [19,10]=%02x cmd[0]=%02x",map.v[0],map.v[10*COLC+19],map.commands[0]);
     egg_log("Commands:");
     map_for_each_command(&map,cb_log_mapcmd,0);
   } else {

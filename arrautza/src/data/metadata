@@ -1,5 +1,6 @@
 title=The Leggend of Arrautza
-author=AK Sommerville
-framebuffer=640x352
 language=en
+framebuffer=320x176
 iconImage=1
+author=AK Sommerville
+players=1

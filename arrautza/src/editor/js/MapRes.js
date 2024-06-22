@@ -79,4 +79,79 @@ export class MapRes {
     if ((this.w < 1) || (this.h < 1)) throw new Error("Map must start with cells image.");
     this.v = new Uint8Array(tmpv);
   }
+  
+  encode() {
+    let dst = "";
+    for (let y=this.h, vp=0; y-->0; ) {
+      for (let x=this.w; x-->0; vp++) {
+        const b = this.v[vp];
+        dst += "0123456789abcdef"[b >> 4];
+        dst += "0123456789abcdef"[b & 15];
+      }
+      dst += "\n";
+    }
+    if (this.commands.length) {
+      dst += "\n";
+      for (const command of this.commands) {
+        dst += command + "\n";
+      }
+    }
+    return dst;
+  }
+  
+  getCommandByKeyword(kw, p) {
+    if (!p) p = 0;
+    for (const cmd of this.commands) {
+      if (!cmd.startsWith(kw)) continue;
+      if ((cmd.length > kw.length) && (cmd[kw.length] !== " ")) continue;
+      if (!p--) return cmd.substring(kw.length).trim();
+    }
+    return null;
+  }
+  
+  /* Return {kw,x,y,w,h} or {kw,x,y} for commands containing an '@' argument.
+   * Null if it doesn't match.
+   */
+  parseRegionCommand(cmd) {
+    const match = cmd.match(/^([0-9a-zA-Z_]+)\s.*@(\d+),(\d+),(\d+),(\d+)(\s|$)/);
+    if (!match) return null;
+    return {
+      kw: match[1],
+      x: +match[2],
+      y: +match[3],
+      w: Math.max(1, +match[4]),
+      h: Math.max(1, +match[5]),
+    };
+  }
+  parsePointCommand(cmd) {
+    const match = cmd.match(/^([0-9a-zA-Z_]+)\s.*@(\d+),(\d+)(\s|$)/);
+    if (!match) return null;
+    return {
+      kw: match[1],
+      x: +match[2],
+      y: +match[3],
+    };
+  }
+  
+  /* Return a modified command with the "@X,Y" changed accordingly.
+   * Returns the input verbatim if we can't.
+   * Good for both regions and points.
+   */
+  moveCommand(cmd, dx, dy) {
+    const atp = cmd.indexOf('@');
+    if (atp < 0) return cmd;
+    const c1p = cmd.indexOf(',', atp);
+    let c2p = c1p + 1;
+    while ((c2p < cmd.length) && (cmd[c2p] !== ',') && (cmd[c2p] !== ' ')) c2p++;
+    let x = +cmd.substring(atp + 1, c1p);
+    let y = +cmd.substring(c1p + 1, c2p);
+    if (isNaN(x) || isNaN(y)) return cmd;
+    x += dx;
+    y += dy;
+    if (x < 0) x = 0; else if (x > 0xff) x = 0xff;
+    if (y < 0) y = 0; else if (y > 0xff) y = 0xff;
+    // We don't clamp to the right and bottom edges. Wouldn't be too tricky to do so, but there's no technical need to.
+    // Clamping against (0,0) is mandatory.
+    return cmd.substring(0, atp + 1) + x + "," + y + cmd.substring(c2p);
+  }
 }
