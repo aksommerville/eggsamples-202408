@@ -71,6 +71,29 @@ export class MapStore {
     return null;
   }
   
+  // => {res,map} or null
+  entryByRid(rid) {
+    for (const plane of this.planes) {
+      const entry = plane.v.find(e => e?.res.rid === rid);
+      if (entry) return entry;
+    }
+    return null;
+  }
+  
+  resByWhatever(whatever) {
+    if (whatever?.startsWith?.("map:")) whatever = whatever.substring(4);
+    if (!whatever) return null;
+    const rid = +whatever;
+    const slashWhatever = "/" + whatever;
+    for (const res of this.resv) {
+      if (res.rid === rid) return res;
+      if (res.name === whatever) return res;
+      if (res.path === whatever) return res;
+      if (res.path.endsWith(slashWhatever)) return res;
+    }
+    return null;
+  }
+  
   /* Beware that coords are transient -- adding a new map can change them.
    */
   mapByCoords(plane, x, y) {
@@ -196,6 +219,12 @@ export class MapStore {
         }
       }
     }
+  }
+  
+  parsePosition(src) {
+    const match = src.match(/^@(\d+),(\d+)$/);
+    if (!match) return [0, 0];
+    return [+match[1] || 0, +match[2] || 0];
   }
   
   /* Grow if necessary, insert map, update neighbors (neighbor commands in map, and in its new neighbors).

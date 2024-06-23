@@ -7,17 +7,21 @@ import { MapBus } from "./MapBus.js";
 import { Resmgr } from "./Resmgr.js";
 import { PaletteModal } from "./PaletteModal.js";
 import { CommandsModal } from "./CommandsModal.js";
+import { MapStore } from "./MapStore.js";
+import { MapPainter } from "./MapPainter.js";
 
 export class MapToolbarUi {
   static getDependencies() {
-    return [HTMLElement, Dom, MapBus, "nonce", Resmgr];
+    return [HTMLElement, Dom, MapBus, "nonce", Resmgr, MapStore, MapPainter];
   }
-  constructor(element, dom, mapBus, nonce, resmgr) {
+  constructor(element, dom, mapBus, nonce, resmgr, mapStore, mapPainter) {
     this.element = element;
     this.dom = dom;
     this.mapBus = mapBus;
     this.nonce = nonce;
     this.resmgr = resmgr;
+    this.mapStore = mapStore;
+    this.mapPainter = mapPainter;
     
     this.map = null;
     this.mapBusListener = this.mapBus.listen(e => this.onBusEvent(e));
@@ -59,14 +63,15 @@ export class MapToolbarUi {
     this.spawnTool("poiedit", 5);
     this.spawnTool("poidelete", 6);
     this.spawnTool("repair", 7);
-    
-    /* Mouse tattle.
-     */
-    this.dom.spawn(this.element, "DIV", ["tattle"]);
+    this.spawnTool("door", 8);
     
     /* Commands button.
      */
     this.dom.spawn(this.element, "INPUT", { type: "button", value: "Commands", "on-click": () => this.onOpenCommands() });
+    
+    /* Mouse tattle.
+     */
+    this.dom.spawn(this.element, "DIV", ["tattle"]);
   }
   
   spawnVisibilityToggle(k, iconix) {
@@ -144,11 +149,46 @@ export class MapToolbarUi {
   
   setTattle(x, y) {
     const tattle = this.element.querySelector(".tattle");
-    tattle.innerText = x.toString().padStart(2, ' ') + "," + y.toString().padStart(2, ' ');
+    tattle.classList.remove("coords");
+    tattle.classList.remove("door");
+    tattle.classList.remove("neighbor");
+    tattle.classList.remove("no-neighbor");
+    
     if (this.map && (x >= 0) && (y >= 0) && (x < this.map.w) && (y < this.map.h)) {
-      tattle.classList.remove("oob");
+      let p;
+      if ((p = this.mapPainter.findPoi()) >= 0) {
+        const command = this.mapBus.loc.map.commands[p];
+        if (command.startsWith("door ")) {
+          let remoteName = command.split(/\s+/g)[2];
+          if (remoteName.startsWith("map:")) remoteName = remoteName.substring(4);
+          tattle.innerText = `To ${remoteName}`;
+          tattle.classList.add("door");
+          return;
+        }
+      }
+      if ((p = this.mapPainter.findEntrance()) >= 0) {
+        const ent = this.mapBus.entrances[p];
+        tattle.innerText = `From ${ent.srcrid}`;
+        tattle.classList.add("door");
+        return;
+      }
+      tattle.innerText = `${x},${y}`;
+      tattle.classList.add("coords");
+      
+    } else if (this.map) {
+      const dx = (x < 0) ? -1 : (x >= this.map.w) ? 1 : 0;
+      const dy = (y < 0) ? -1 : (y >= this.map.h) ? 1 : 0;
+      const entry = this.mapStore.entryByCoords(this.mapBus.loc.plane, this.mapBus.loc.x + dx, this.mapBus.loc.y + dy);
+      if (entry) {
+        tattle.innerText = "#" + entry.res.rid;
+        tattle.classList.add("neighbor");
+      } else {
+        tattle.innerText = "new";
+        tattle.classList.add("no-neighbor");
+      }
+      
     } else {
-      tattle.classList.add("oob");
+      tattle.innerText = "";
     }
   }
   

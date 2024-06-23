@@ -13,3 +13,4 @@
 image image:meadow
 neighborw map:2
 neighbors map:3
+door @7,3 map:1 @10,3 0 0

@@ -5,14 +5,22 @@
 import { MapBus } from "./MapBus.js";
 import { Dom } from "./Dom.js"; // For spawning modals only.
 import { CommandModal } from "./CommandModal.js";
+import { MapStore } from "./MapStore.js";
+import { Resmgr } from "./Resmgr.js";
+import { DoorModal } from "./DoorModal.js";
+import { Bus } from "./Bus.js";
  
 export class MapPainter {
   static getDependencies() {
-    return [MapBus, Dom];
+    return [MapBus, Dom, MapStore, Resmgr, Bus];
   }
-  constructor(mapBus, dom) {
+  constructor(mapBus, dom, mapStore, resmgr, bus) {
     this.mapBus = mapBus;
     this.dom = dom;
+    this.mapStore = mapStore;
+    this.resmgr = resmgr;
+    this.bus = bus;
+    
     this.map = null;
     this.toolInProgress = "";
     this.anchorx = 0; // monalisa
@@ -96,22 +104,45 @@ export class MapPainter {
     if (!dx && !dy) return;
     this.poimovePvx = this.mapBus.mousecol;
     this.poimovePvy = this.mapBus.mouserow;
-    const ocmd = this.map.commands[this.poimoveIndex];
-    const ncmd = this.map.moveCommand(ocmd, dx, dy);
-    this.map.commands[this.poimoveIndex] = ncmd;
-    this.mapBus.dirty();
-    this.mapBus.commandsChanged();
+    if (this.poimoveIsEntrance) {
+      const door = this.mapBus.entrances[this.poimoveIndex]; // Same object in MapCanvasUi and MapStore.
+      door.dstx += dx;
+      door.dsty += dy;
+      if (door.dstx < 0) door.dstx = 0;
+      if (door.dsty < 0) door.dsty = 0;
+      const srcentry = this.mapStore.entryByRid(door.srcrid);
+      if (srcentry) { // Must exist, i mean, how did we know about the entrance? But let's be safe.
+        srcentry.map.updateDoorExit(door.srcx, door.srcy, door.dstx, door.dsty);
+        this.resmgr.dirty(srcentry.res.path, () => srcentry.map.encode());
+      }
+      this.mapBus.broadcast({ type: "render" });
+    } else {
+      const ocmd = this.map.commands[this.poimoveIndex];
+      const ncmd = this.map.moveCommand(ocmd, dx, dy);
+      this.map.commands[this.poimoveIndex] = ncmd;
+      this.mapBus.dirty();
+      this.mapBus.commandsChanged();
+    }
   }
    
   poimoveBegin() {
-    const cmdp = this.findPoi();
-    if ((cmdp < 0) || (cmdp >= this.map.commands.length)) {
-      this.toolInProgress = "";
+    this.poimoveIsEntrance = false;
+    let p = this.findPoi();
+    if ((p >= 0) && (p < this.map.commands.length)) {
+      this.poimoveIndex = p;
+      this.poimovePvx = this.mapBus.mousecol;
+      this.poimovePvy = this.mapBus.mouserow;
       return;
     }
-    this.poimoveIndex = cmdp;
-    this.poimovePvx = this.mapBus.mousecol;
-    this.poimovePvy = this.mapBus.mouserow;
+    p = this.findEntrance();
+    if ((p >= 0) && (p < this.mapBus.entrances.length)) {
+      this.poimoveIsEntrance = true;
+      this.poimoveIndex = p;
+      this.poimovePvx = this.mapBus.mousecol;
+      this.poimovePvy = this.mapBus.mouserow;
+      return;
+    }
+    this.toolInProgress = "";
   }
   
   /* poiedit: Open a modal for an existing point or region command.
@@ -143,7 +174,82 @@ export class MapPainter {
     this.mapBus.commandsChanged();
   }
   
-  /* General event dispatch.
+  /* door: Travel through door commands or entrances, or create a new door.
+   ********************************************************/
+   
+  doorBegin() {
+    this.toolInProgress = "";
+    // First check entrances. There could be more than one for a cell, and we want to get the correct one.
+    const p = this.findEntrance();
+    if ((p >= 0) && (p < this.mapBus.entrances.length)) {
+      this.mapBus.broadcast({ type: "open", rid: this.mapBus.entrances[p].srcrid });
+      return;
+    }
+    // Next check global doors, both (src) and (dst). We don't care about the sub-position anymore.
+    for (const door of this.mapStore.doors) {
+      if (
+        (door.srcrid === this.mapBus.loc.res.rid) &&
+        (door.srcx === this.mapBus.mousecol) &&
+        (door.srcy === this.mapBus.mouserow)
+      ) {
+        this.mapBus.broadcast({ type: "open", rid: door.dstrid });
+        return;
+      }
+      if (
+        (door.dstrid === this.mapBus.loc.res.rid) &&
+        (door.dstx === this.mapBus.mousecol) &&
+        (door.dsty === this.mapBus.mouserow)
+      ) {
+        this.mapBus.broadcast({ type: "open", rid: door.srcrid });
+        return;
+      }
+    }
+    // And finally, let's figure they are asking to create a new door.
+    const srcx = this.mapBus.mousecol;
+    const srcy = this.mapBus.mouserow;
+    if ((srcx < 0) || (srcx >= this.mapBus.loc.map.w)) return;
+    if ((srcy < 0) || (srcy >= this.mapBus.loc.map.h)) return;
+    const modal = this.dom.spawnModal(DoorModal);
+    modal.setOrigin(this.mapBus.loc.res.rid, srcx, srcy);
+    modal.result.then(rsp => {
+      this.createDoor(rsp, srcx, srcy);
+    }).catch(e => { if (e) this.bus.broadcast({ type: "error", e }) });
+  }
+  
+  /* (rsp) comes from DoorModal:
+   *   dstrid: string; Could be a name, or empty, or whatever. Might exist.
+   *   dstxy: "X,Y"
+   *   data1: string
+   *   data2: string
+   *   remote: boolean
+   */
+  createDoor(rsp, srcx, srcy) {
+    let entry;
+    let res = this.mapStore.resByWhatever(rsp.dstrid);
+    if (res) {
+      entry = this.mapStore.entryByPath(res.path);
+    } else {
+      entry = this.mapStore.createMap(this.mapStore.planes.length, 0, 0, null, rsp.dstrid);
+    }
+    if (!entry) return;
+    const srcrid = this.mapBus.loc.res.rid;
+    const dstrid = entry.res.rid;
+    const [dstx, dsty] = rsp.dstxy.split(',').map(v => +v || 0);
+    // Generate a new command on the current map, and a door on MapStore:
+    this.mapStore.doors.push({ srcrid, srcx, srcy, dstrid, dstx, dsty });
+    this.mapBus.loc.map.commands.push(`door @${srcx},${srcy} map:${dstrid} @${dstx},${dsty} ${rsp.data1 || '0'} ${rsp.data2 || '0'}`);
+    this.mapBus.dirty();
+    this.mapBus.commandsChanged();
+    // If requested, generate a command on the remote map too:
+    if (rsp.remote) {
+      this.mapStore.doors.push({ srcrid: dstrid, srcx: dstx, srcy: dsty, dstrid: srcrid, dstx: srcx, dsty: srcy });
+      entry.map.commands.push(`door @${dstx},${dsty} map:${srcrid} @${srcx},${srcy} 0 0`);
+      this.resmgr.dirty(entry.res.path, () => entry.map.encode());
+      this.mapBus.broadcast({ type: "remoteDoorsChanged" });
+    }
+  }
+  
+  /* Find things.
    *****************************************************/
    
   // Index in (this.map.v) for the current hover cell, or <0 if OOB.
@@ -188,6 +294,31 @@ export class MapPainter {
     }
     return -1;
   }
+  
+  // Same idea as findPoi(), but search for 'dst' in mapBus.entrances.
+  findEntrance() {
+    if (!this.mapBus.visibility.points) return -1;
+    if ((this.mapBus.mousecol < 0) || (this.mapBus.mousecol >= this.map.w)) return -1;
+    if ((this.mapBus.mouserow < 0) || (this.mapBus.mouserow >= this.map.h)) return -1;
+    let subp = ((this.mapBus.mousesubx >= 0.5) ? 1 : 0) + ((this.mapBus.mousesuby >= 0.5) ? 2 : 0);
+    let p = 0;
+    for (const command of this.map.commands) { // Must walk POIs too, to keep (subp) fresh.
+      const c = this.map.parsePointCommand(command);
+      if (c && (this.mapBus.mousecol === c.x) && (this.mapBus.mouserow === c.y)) {
+        if (!subp--) return -1;
+      }
+    }
+    for (const entrance of this.mapBus.entrances) {
+      if ((entrance.dstx === this.mapBus.mousecol) && (entrance.dsty === this.mapBus.mouserow)) {
+        if (!subp--) return p;
+      }
+      p++;
+    }
+    return -1;
+  }
+  
+  /* General event dispatch.
+   *****************************************************/
    
   onBeginPaint() {
     this.toolInProgress = this.mapBus.effectiveTool;
@@ -200,6 +331,7 @@ export class MapPainter {
       case "poimove": this.poimoveBegin(); break;
       case "poiedit": this.poieditBegin(); break;
       case "poidelete": this.poideleteBegin(); break;
+      case "door": this.doorBegin(); break;
     }
   }
   

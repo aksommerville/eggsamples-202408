@@ -75,16 +75,25 @@ input.toggle + label > span {
 
 .MapToolbarUi .tattle {
   background-color: #000;
-  color: #ff0;
+  color: #fff;
   font-family: monospace;
   font-size: 9pt;
-  width: 5em;
+  width: 100px;
   white-space: pre;
   text-align: center;
   user-select: none;
 }
-.MapToolbarUi .tattle.oob {
-  color: #f00;
+.MapToolbarUi .tattle.coords {
+  color: #ff0;
+}
+.MapToolbarUi .tattle.door {
+  color: #0f0;
+}
+.MapToolbarUi .tattle.neighbor {
+  color: #0ff;
+}
+.MapToolbarUi .tattle.no-neighbor {
+  color: #08f;
 }
 
 .MapCanvasUi {
@@ -137,4 +146,11 @@ input.toggle + label > span {
   background-color: #000;
   color: #0f0;
   padding: 0.5em;
+}
+
+.DoorModal .rid {
+  background-color: #faa;
+}
+.DoorModal .rid.existing {
+  background-color: #afa;
 }

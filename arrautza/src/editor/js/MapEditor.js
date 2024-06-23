@@ -11,18 +11,20 @@ import { MapCanvasUi } from "./MapCanvasUi.js";
 import { MapBus } from "./MapBus.js";
 import { MapPainter } from "./MapPainter.js";
 import { MapStore } from "./MapStore.js";
+import { Bus } from "./Bus.js";
 
 export class MapEditor {
   static getDependencies() {
-    return [HTMLElement, Dom, Resmgr, MapBus, MapPainter, MapStore];
+    return [HTMLElement, Dom, Resmgr, MapBus, MapPainter, MapStore, Bus];
   }
-  constructor(element, dom, resmgr, mapBus, mapPainter, mapStore) {
+  constructor(element, dom, resmgr, mapBus, mapPainter, mapStore, bus) {
     this.element = element;
     this.dom = dom;
     this.resmgr = resmgr;
     this.mapBus = mapBus;
     this.mapPainter = mapPainter;
     this.mapStore = mapStore;
+    this.bus = bus;
     
     this.loc = null; // From MapStore: {plane,x,y,res,map}
     this.map = null;
@@ -69,9 +71,17 @@ export class MapEditor {
     this.toolbar.setMap(this.map);
   }
   
+  onOpen(rid) {
+    if (!rid) return;
+    const loc = this.mapStore.entryByRid(rid);
+    if (!loc) return;
+    this.bus.broadcast({ type: "open", path: loc.res.path });
+  }
+  
   onBusEvent(e) {
     switch (e.type) {
       case "dirty": if (this.map) this.resmgr.dirty(this.path, () => this.map.encode()); break;
+      case "open": this.onOpen(e.rid); break;
     }
   }
 }

@@ -32,6 +32,7 @@ export class MapBus {
     this.mousesubx = 0; // Only valid immediately after a mousedown; motion doesn't update it.
     this.mousesuby = 0;
     this.loc = null; // From MapStore: {plane,x,y,res,map}. Will always be populated before MapEditor builds its children.
+    this.entrances = []; // From MapCanvasUi. MapStore.doors: {srcrid,srcx,srcy,dstrid,dstx,dsty}, we are "dst".
     
     this.mod = 0;
     this.window.addEventListener("keyup", e => this.onKeyUp(e));
@@ -159,6 +160,11 @@ export class MapBus {
   setLoc(loc) {
     this.loc = loc;
     this.broadcast({ type: "loc" });
+  }
+  
+  setEntrances(entrances) {
+    this.entrances = entrances;
+    this.broadcast({ type: "entrances" });
   }
 }
 

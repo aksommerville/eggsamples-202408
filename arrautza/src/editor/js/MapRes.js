@@ -111,6 +111,7 @@ export class MapRes {
   
   /* Return {kw,x,y,w,h} or {kw,x,y} for commands containing an '@' argument.
    * Null if it doesn't match.
+   * Point commands may contain multiple points (eg "door"). We guarantee to return the first.
    */
   parseRegionCommand(cmd) {
     const match = cmd.match(/^([0-9a-zA-Z_]+)\s.*@(\d+),(\d+),(\d+),(\d+)(\s|$)/);
@@ -124,7 +125,7 @@ export class MapRes {
     };
   }
   parsePointCommand(cmd) {
-    const match = cmd.match(/^([0-9a-zA-Z_]+)\s.*@(\d+),(\d+)(\s|$)/);
+    const match = cmd.match(/^([0-9a-zA-Z_]+)\s[^@]*@(\d+),(\d+)(\s|$)/);
     if (!match) return null;
     return {
       kw: match[1],
@@ -153,6 +154,26 @@ export class MapRes {
     // We don't clamp to the right and bottom edges. Wouldn't be too tricky to do so, but there's no technical need to.
     // Clamping against (0,0) is mandatory.
     return cmd.substring(0, atp + 1) + x + "," + y + cmd.substring(c2p);
+  }
+  
+  /* If we have a "door" command at (srcx,srcy), change its target position to (dstx,dsty).
+   */
+  updateDoorExit(srcx, srcy, dstx, dsty) {
+    for (let p=0; p<this.commands.length; p++) {
+      const command = this.commands[p];
+      if (!command.startsWith("door")) continue;
+      const c = this.parsePointCommand(command);
+      if (!c) continue;
+      if (c.x !== srcx) continue;
+      if (c.y !== srcy) continue;
+      const words = command.split(/\s+/g);
+      const dstpt = words[3];
+      if (!dstpt || !dstpt.startsWith("@")) continue;
+      words[3] = "@" + dstx + "," + dsty;
+      this.commands[p] = words.join(' ');
+      return true;
+    }
+    return false;
   }
   
   replaceSingleCommand(k, v) {

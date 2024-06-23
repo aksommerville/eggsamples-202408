@@ -39,6 +39,8 @@ export class MapCanvasUi {
       rowh: 0,
     };
     this.neighbors = []; // [nw,n,ne,w,null,e,sw,s,se]: {path,rid,image}
+    this.entrances = []; // From MapStore: {srcrid,srcx,srcy,dstrid,dstx,dsty}, we are "dst"
+    this.mapcmdicon = {}; // key: command keyword, value: Image or null
     
     this.mapBusListener = this.mapBus.listen(e => this.onBusEvent(e));
     
@@ -199,16 +201,63 @@ export class MapCanvasUi {
       let dsty = this.geometry.y0 + this.geometry.rowh * c.y;
       if (subp & 1) dstx += boff; else dstx += aoff;
       if (subp & 2) dsty += boff; else dsty += aoff;
-      this.ctx.beginPath();
-      this.ctx.ellipse(dstx, dsty, ro, ro, 0, 0, Math.PI * 2);
-      this.ctx.fillStyle = "#fff";
-      this.ctx.fill();
-      this.ctx.beginPath();
-      this.ctx.ellipse(dstx, dsty, ri, ri, 0, 0, Math.PI * 2);
-      const opcode = this.evalOpcode(c.kw);
-      this.ctx.fillStyle = MapCanvasUi.ctab[opcode];
-      this.ctx.fill();
+      const srcbits = this.getIconForPointCommand(c.kw);
+      if (srcbits) {
+        this.ctx.drawImage(srcbits, 0, 0, srcbits.naturalWidth, srcbits.naturalHeight, dstx - 8, dsty - 8, 16, 16);
+      } else {
+        this.ctx.beginPath();
+        this.ctx.ellipse(dstx, dsty, ro, ro, 0, 0, Math.PI * 2);
+        this.ctx.fillStyle = "#fff";
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.ellipse(dstx, dsty, ri, ri, 0, 0, Math.PI * 2);
+        const opcode = this.evalOpcode(c.kw);
+        this.ctx.fillStyle = MapCanvasUi.ctab[opcode];
+        this.ctx.fill();
+      }
     }
+    // Entrances render just like point commands, user doesn't need to care about the difference.
+    // Only render if the icon is ready, because I'm lazy.
+    if (this.entrances.length > 0) {
+      const srcbits = this.getIconForPointCommand("door-dst");
+      if (srcbits) {
+        for (const entrance of this.entrances) {
+          const id = entrance.dstx + "," + entrance.dsty;
+          let subp = countById[id];
+          if (!subp) {
+            subp = 0;
+            countById[id] = 1;
+          } else {
+            countById[id]++;
+          }
+          subp &= 3;
+          let dstx = this.geometry.x0 + this.geometry.colw * entrance.dstx;
+          let dsty = this.geometry.y0 + this.geometry.rowh * entrance.dsty;
+          if (subp & 1) dstx += boff; else dstx += aoff;
+          if (subp & 2) dsty += boff; else dsty += aoff;
+          this.ctx.drawImage(srcbits, 0, 0, srcbits.naturalWidth, srcbits.naturalHeight, dstx - 8, dsty - 8, 16, 16);
+        }
+      }
+    }
+  }
+  
+  getIconForPointCommand(kw) {
+    let image = this.mapcmdicon[kw];
+    if (image === undefined) {
+      if (!isNaN(+kw)) return null; // Don't try to look up numeric keywords.
+      image = new Image();
+      this.mapcmdicon[kw] = image;
+      image.addEventListener("load", () => {
+        this.renderSoon();
+      });
+      image.addEventListener("error", () => {
+        this.mapcmdicon[kw] = null;
+      });
+      image.src = `/mapcmdicon/${kw}.png`;
+    } else if (image?.complete) {
+      return image;
+    }
+    return null;
   }
   
   redrawNeighbors() {
@@ -269,6 +318,11 @@ export class MapCanvasUi {
     return 0;
   }
   
+  refreshEntrances() {
+    this.entrances = this.mapStore.doors.filter(d => d.dstrid === this.loc.res.rid);
+    this.mapBus.setEntrances(this.entrances);
+  }
+  
   /* For (x,y) straight off a mouse event, return:
    * {
    *   col, row: number; Cell coordinates in main map, can be OOB.
@@ -312,12 +366,8 @@ export class MapCanvasUi {
   }
   
   onMotion(e) {
-    const bounds = this.element.getBoundingClientRect();
-    const x = e.x - bounds.x;
-    const y = e.y - bounds.y;
-    const col = Math.floor((x - this.geometry.x0) / this.geometry.colw);
-    const row = Math.floor((y - this.geometry.y0) / this.geometry.rowh);
-    this.mapBus.setMouse(col, row);
+    const loc = this.assessMousePosition(e.x, e.y);
+    this.mapBus.setMouse(loc.col, loc.row, loc.subx, loc.suby);
   }
   
   clickNeighbor(p, dx, dy) {
@@ -381,6 +431,7 @@ export class MapCanvasUi {
     this.loc = this.mapBus.loc;
     this.map = this.loc.map;
     this.redrawNeighbors();
+    this.refreshEntrances();
     this.renderSoon();
   }
   
@@ -390,6 +441,8 @@ export class MapCanvasUi {
       case "dirty": this.renderSoon(); break;
       case "commandsChanged": this.redrawNeighbors(); this.renderSoon(); break;
       case "loc": this.onLocChanged(); break;
+      case "render": this.renderSoon(); break;
+      case "remoteDoorsChanged": this.refreshEntrances(); this.renderSoon(); break;
     }
   }
 }
