@@ -8,22 +8,25 @@ import { MapBus } from "./MapBus.js";
 import { Resmgr } from "./Resmgr.js";
 import { MapRes } from "./MapRes.js";
 import { Bus } from "./Bus.js";
+import { MapStore } from "./MapStore.js";
 
 const RENDER_DEBOUNCE_TIME = 50;
 
 export class MapCanvasUi {
   static getDependencies() {
-    return [HTMLCanvasElement, Dom, Window, MapBus, Resmgr, Bus];
+    return [HTMLCanvasElement, Dom, Window, MapBus, Resmgr, Bus, MapStore];
   }
-  constructor(element, dom, window, mapBus, resmgr, bus) {
+  constructor(element, dom, window, mapBus, resmgr, bus, mapStore) {
     this.element = element;
     this.dom = dom;
     this.window = window;
     this.mapBus = mapBus;
     this.resmgr = resmgr;
     this.bus = bus;
+    this.mapStore = mapStore;
     
     this.map = null;
+    this.loc = null;
     this.ctx = this.element.getContext("2d");
     this.ctx.imageSmoothingEnabled = false;
     this.renderTimeout = null;
@@ -35,7 +38,7 @@ export class MapCanvasUi {
       colw: 0, // Distance between columns, including spacing if present.
       rowh: 0,
     };
-    this.neighbors = []; // [nw,n,ne,w,null,e,sw,s,se]: {rid,image}
+    this.neighbors = []; // [nw,n,ne,w,null,e,sw,s,se]: {path,rid,image}
     
     this.mapBusListener = this.mapBus.listen(e => this.onBusEvent(e));
     
@@ -46,6 +49,8 @@ export class MapCanvasUi {
     this.window.addEventListener("mousemove", this.motionListener);
     this.element.addEventListener("mousedown", e => this.onMouseDown(e));
     this.mouseUpListener = null; // attached to window
+    
+    this.onLocChanged(this.mapBus.loc);
   }
   
   onRemoveFromDom() {
@@ -64,11 +69,6 @@ export class MapCanvasUi {
     }
   }
   
-  setMap(map) {
-    this.map = map;
-    this.renderSoon();
-  }
-  
   renderSoon() {
     if (this.renderTimeout) return;
     this.renderTimeout = this.window.setTimeout(() => {
@@ -82,7 +82,6 @@ export class MapCanvasUi {
     this.element.width = bounds.width;
     this.element.height = bounds.height;
     this.ctx.clearRect(0, 0, bounds.width, bounds.height);
-    this.redrawNeighbors();
     if (this.map) this.renderMap();
   }
   
@@ -218,39 +217,24 @@ export class MapCanvasUi {
       return;
     }
     this.neighbors = [null, null, null, null, null, null, null, null, null];
-    this.redrawNeighbor("neighborw", 3, "neighborn", 0, "neighbors", 6);
-    this.redrawNeighbor("neighbore", 5, "neighborn", 2, "neighbors", 8);
-    this.redrawNeighbor("neighborn", 1, "neighborw", 0, "neighbore", 2);
-    this.redrawNeighbor("neighbors", 7, "neighborw", 6, "neighbore", 8);
-  }
-  
-  /* If we have a neighbor in direction (myrelation), draw it and store in slot (mainp).
-   * Then, check if that neighbor has neighbors (rel1,rel2) and repeat, if we haven't populated those slots yet.
-   */
-  redrawNeighbor(myrelation, mainp, rel1, ix1, rel2, ix2) {
-    const name = this.map.getCommandByKeyword(myrelation);
-    if (!name) return;
-    const res = this.resmgr.resByString(name, "map");
-    if (!res) return;
-    const nmap = new MapRes(res.serial);
-    const imageName = nmap.getCommandByKeyword("image");
-    const image = this.resmgr.getImage(imageName);
-    if (!image || image.complete) {
-      const finished = this.drawMapImage(nmap, image);
-      this.neighbors[mainp] = { rid: res.rid, image: finished };
-    } else {
-      image.addEventListener("load", () => {
-        const finished = this.drawMapImage(nmap, image);
-        this.neighbors[mainp] = { rid: res.rid, image: finished };
-        this.renderSoon();
-      });
+    for (let np=0, dy=-1; dy<=1; dy++) {
+      for (let dx=-1; dx<=1; dx++, np++) {
+        if (!dx && !dy) continue;
+        const nei = this.mapStore.entryByCoords(this.loc.plane, this.loc.x + dx, this.loc.y + dy);
+        if (!nei) continue;
+        this.neighbors[np] = {
+          path: nei.res.path,
+          rid: nei.res.rid,
+          image: this.drawMapImage(nei.map, 0.5),
+        };
+      }
     }
   }
   
   // Return a new canvas with an exact-size image of the given map.
-  // Caller must load its tilesheet first and wait for it to finish loading.
-  // Or (tilesheet) may be null to use an imageless fallback.
-  drawMapImage(map, tilesheet) {
+  // (fadeOut) in 0..1 to blend it gray a little.
+  drawMapImage(map, fadeOut) {
+    const tilesheet = this.resmgr.getImage(map.getCommandByKeyword("image"));
     const tilesize = tilesheet ? (tilesheet.naturalWidth >> 4) : 16;
     const canvas = document.createElement("CANVAS");
     canvas.width = map.w * tilesize;
@@ -268,8 +252,11 @@ export class MapCanvasUi {
         }
       }
     }
-    ctx.globalAlpha = 0.5;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (fadeOut) {
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = "#444";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     return canvas;
   }
   
@@ -333,30 +320,46 @@ export class MapCanvasUi {
     this.mapBus.setMouse(col, row);
   }
   
-  clickNeighbor(p) {
+  clickNeighbor(p, dx, dy) {
     const neighbor = this.neighbors[p];
-    if (!neighbor) {
-      if (!(p & 1)) return; // even indices are diagonal and center -- we only create cardinal neighbors
-      console.log(`*** TODO MapCanvasUi.clickNeighbor: Prompt to create new one ***`);
+    if (neighbor) {
+      const path = neighbor.path;
+      this.bus.broadcast({ type: "open", path });
       return;
     }
-    const entry = this.resmgr.resById("map", neighbor.rid);
-    if (!entry) return;
-    const path = entry.path;
-    this.bus.broadcast({ type: "open", path, serial: entry.serial });
+    const nx = this.loc.x + dx;
+    const ny = this.loc.y + dy;
+    if (dx && dy) {
+      // We can create diagonal neighbors and they'll behave as expected until you refresh.
+      // But if you don't join them cardinally in this session, they'll wind up disconnected, they'll be on a new plane next load.
+      // That's an accident waiting to happen. So if the diagonal doesn't have an intermediate cardinal, tell the user and abort.
+      const card1 = (dy + 1) * 3 + 1;
+      const card2 = 3 + dx + 1;
+      if (!this.neighbors[card1] && !this.neighbors[card2]) {
+        this.dom.modalMessage("Please create cardinal neighbor first. If you go straight to a diagonal, there's no path to it.");
+        return;
+      }
+    }
+    const proposeId = this.mapStore.unusedId();
+    this.dom.modalInput(`'ID' or 'ID-NAME' for new map at (${dx},${dy}) to current:`, proposeId.toString()).then(basename => {
+      if (!basename) throw null;
+      const entry = this.mapStore.createMap(this.loc.plane, nx, ny, this.map, basename);
+      if (!entry) return;
+      this.bus.broadcast({ type: "open", path: entry.res.path });
+    }).catch(e => e ? this.bus.broadcast({ type: "error", error: e }) : null);
   }
   
   onMouseDown(e) {
     const loc = this.assessMousePosition(e.x, e.y);
     switch (loc.which) {
-      case "nw": this.clickNeighbor(0); break;
-      case "n": this.clickNeighbor(1); break;
-      case "ne": this.clickNeighbor(2); break;
-      case "w": this.clickNeighbor(3); break;
-      case "e": this.clickNeighbor(5); break;
-      case "sw": this.clickNeighbor(6); break;
-      case "s": this.clickNeighbor(7); break;
-      case "se": this.clickNeighbor(8); break;
+      case "nw": this.clickNeighbor(0, -1, -1); break;
+      case "n":  this.clickNeighbor(1,  0, -1); break;
+      case "ne": this.clickNeighbor(2,  1, -1); break;
+      case "w":  this.clickNeighbor(3, -1,  0); break;
+      case "e":  this.clickNeighbor(5,  1,  0); break;
+      case "sw": this.clickNeighbor(6, -1,  1); break;
+      case "s":  this.clickNeighbor(7,  0,  1); break;
+      case "se": this.clickNeighbor(8,  1,  1); break;
       case "": {
           this.mapBus.setMouse(loc.col, loc.row, loc.subx, loc.suby);
           this.mapBus.beginPaint();
@@ -374,11 +377,19 @@ export class MapCanvasUi {
     this.mouseUpListener = null;
   }
   
+  onLocChanged() {
+    this.loc = this.mapBus.loc;
+    this.map = this.loc.map;
+    this.redrawNeighbors();
+    this.renderSoon();
+  }
+  
   onBusEvent(e) {
     switch (e.type) {
       case "visibility": this.redrawNeighbors(); this.renderSoon(); break;
       case "dirty": this.renderSoon(); break;
       case "commandsChanged": this.redrawNeighbors(); this.renderSoon(); break;
+      case "loc": this.onLocChanged(); break;
     }
   }
 }

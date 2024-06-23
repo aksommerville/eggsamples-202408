@@ -6,11 +6,13 @@
 import { MagicGlobals } from "./MagicGlobals.js";
  
 export class MapRes {
-  constructor(src) {
+  constructor(src, h) {
     if (!src) {
       this._initDefault();
     } else if (src instanceof MapRes) {
       this._initCopy(src);
+    } else if ((typeof(src) === "number") && (typeof(h) === "number")) {
+      this._initDefault(src, h);
     } else {
       if (src instanceof ArrayBuffer) src = new Uint8Array(src);
       if (src instanceof Uint8Array) src = new TextDecoder("utf8").decode(src);
@@ -20,13 +22,11 @@ export class MapRes {
     }
   }
   
-  _initDefault() {
-    MagicGlobals.require().then(() => {
-      this.w = MagicGlobals.COLC;
-      this.h = MagicGlobals.ROWC;
-      this.v = new Uint8Array(this.w * this.h);
-      this.commands = []; // Strings, one command each.
-    }).catch(e => console.error(e));
+  _initDefault(w, h) {
+    this.w = w || MagicGlobals.COLC;
+    this.h = h || MagicGlobals.ROWC;
+    this.v = new Uint8Array(this.w * this.h);
+    this.commands = []; // Strings, one command each.
   }
   
   _initCopy(src) {
@@ -153,5 +153,26 @@ export class MapRes {
     // We don't clamp to the right and bottom edges. Wouldn't be too tricky to do so, but there's no technical need to.
     // Clamping against (0,0) is mandatory.
     return cmd.substring(0, atp + 1) + x + "," + y + cmd.substring(c2p);
+  }
+  
+  replaceSingleCommand(k, v) {
+    let replaced = false;
+    for (let i=this.commands.length; i-->0; ) {
+      if (this.commands[i].startsWith(k) && ((this.commands[i].charCodeAt(k.length) || 0) <= 0x20)) {
+        if (!replaced) {
+          replaced = true;
+          this.commands[i] = `${k} ${v}`;
+        } else {
+          this.commands.splice(i, 1);
+        }
+      }
+    }
+    if (!replaced) {
+      this.commands.push(`${k} ${v}`);
+    }
+  }
+  
+  removeCommands(k) {
+    this.commands = this.commands.filter(cmd => (!cmd.startsWith(k) || (cmd.charCodeAt(k.length) > 0x20)));
   }
 }

@@ -10,18 +10,21 @@ import { MapToolbarUi } from "./MapToolbarUi.js";
 import { MapCanvasUi } from "./MapCanvasUi.js";
 import { MapBus } from "./MapBus.js";
 import { MapPainter } from "./MapPainter.js";
+import { MapStore } from "./MapStore.js";
 
 export class MapEditor {
   static getDependencies() {
-    return [HTMLElement, Dom, Resmgr, MapBus, MapPainter];
+    return [HTMLElement, Dom, Resmgr, MapBus, MapPainter, MapStore];
   }
-  constructor(element, dom, resmgr, mapBus, mapPainter) {
+  constructor(element, dom, resmgr, mapBus, mapPainter, mapStore) {
     this.element = element;
     this.dom = dom;
     this.resmgr = resmgr;
     this.mapBus = mapBus;
     this.mapPainter = mapPainter;
+    this.mapStore = mapStore;
     
+    this.loc = null; // From MapStore: {plane,x,y,res,map}
     this.map = null;
     this.path = "";
     this.toolbar = null;
@@ -32,6 +35,7 @@ export class MapEditor {
     this.globalsReady = false;
     MagicGlobals.require().then(() => {
       this.globalsReady = true;
+      this.mapStore.require();
       this.maybeReady();
     }).catch(e => console.error(e));
   }
@@ -42,14 +46,18 @@ export class MapEditor {
   }
   
   setup(serial, path) {
-    this.map = new MapRes(serial);
+    // Beware that MagicGlobals and MapStore might not be ready yet -- initial load, it's basically guaranteed they are not.
     this.path = path;
     this.maybeReady();
   }
   
   maybeReady() {
     if (!this.globalsReady) return;
-    if (!this.map) return;
+    if (!this.path) return;
+    this.loc = this.mapStore.findPath(this.path);
+    if (!this.loc) throw new Error(`Map ${this.path} not found in MapStore`);
+    this.map = this.loc.map;
+    this.mapBus.setLoc(this.loc);
     this.mapPainter.reset(this.map);
     this.buildUi();
   }
@@ -59,7 +67,6 @@ export class MapEditor {
     this.toolbar = this.dom.spawnController(this.element, MapToolbarUi);
     this.canvas = this.dom.spawnController(this.element, MapCanvasUi);
     this.toolbar.setMap(this.map);
-    this.canvas.setMap(this.map);
   }
   
   onBusEvent(e) {

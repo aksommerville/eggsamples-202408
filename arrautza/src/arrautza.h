@@ -32,6 +32,7 @@
 #define MAPCMD_neighbore 0x24 /* u16:mapid */
 #define MAPCMD_neighborn 0x25 /* u16:mapid */
 #define MAPCMD_neighbors 0x26 /* u16:mapid */
+#define MAPCMD_door 0x80 /* u16:pt u16:mapid u16:dstpt u8:reserved1 u8:reserved2 */
 #define MAPCMD_FOR_EACH \
   _(hero) \
   _(song) \
@@ -39,7 +40,8 @@
   _(neighborw) \
   _(neighbore) \
   _(neighborn) \
-  _(neighbors)
+  _(neighbors) \
+  _(door)
 
 #include "general/general.h"
   

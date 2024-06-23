@@ -22,7 +22,7 @@ export class MapBus {
       image: true,
       points: true,
       regions: false,
-      neighbors: false,
+      neighbors: true,
     };
     this.explicitTool = "rainbow";
     this.effectiveTool = "rainbow";
@@ -31,6 +31,7 @@ export class MapBus {
     this.mouserow = 0;
     this.mousesubx = 0; // Only valid immediately after a mousedown; motion doesn't update it.
     this.mousesuby = 0;
+    this.loc = null; // From MapStore: {plane,x,y,res,map}. Will always be populated before MapEditor builds its children.
     
     this.mod = 0;
     this.window.addEventListener("keyup", e => this.onKeyUp(e));
@@ -153,6 +154,11 @@ export class MapBus {
     if (tileid === this.tileid) return;
     this.tileid = tileid;
     this.broadcast({ type: "tileid" });
+  }
+  
+  setLoc(loc) {
+    this.loc = loc;
+    this.broadcast({ type: "loc" });
   }
 }
 
