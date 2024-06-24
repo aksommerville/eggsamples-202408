@@ -48,6 +48,7 @@ LDPOST_NATIVE:=
 DATAHEADER:=$(MIDDIR)/resid.h
 $(MIDDIR)/data/%:src/data/%;$(PRECMD) cp $< $@
 $(MIDDIR)/data/map/%:src/data/map/% $(EXE_BUILDER) $(DATAHEADER);$(PRECMD) $(EXE_BUILDER) -o$@ $< -tmap -h$(DATAHEADER)
+$(MIDDIR)/data/tilesheet/%:src/data/tilesheet/% $(EXE_BUILDER) $(DATAHEADER);$(PRECMD) $(EXE_BUILDER) -o$@ $< -ttilesheet -h$(DATAHEADER)
 
 # Can add `--external` to serve on external interfaces, eg to test on your phone. Don't leave that on.
 serve:$(ROM);$(EGGDEV) serve $(ROM) --htdocs=$(EGG_SDK)/src/www

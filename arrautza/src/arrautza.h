@@ -46,7 +46,13 @@
 #include "general/general.h"
   
 extern struct globals {
-  int TODO;
+  int texid_tilesheet;
+  uint16_t imageid_tilesheet;
+  uint16_t mapid;
+  struct map map;
 } g;
+
+int load_map(uint16_t mapid);
+void render_map();
   
 #endif

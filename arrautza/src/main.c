@@ -20,18 +20,6 @@ static void cb_raw(const union egg_event *event,void *userdata) {
   }
 }
 
-static int cb_log_mapcmd(const uint8_t *cmd,int cmdc,void *userdata) {
-  char tmp[256];
-  int tmpc=0;
-  for (;cmdc-->0;cmd++) {
-    tmp[tmpc++]=' ';
-    tmp[tmpc++]="0123456789abcdef"[(*cmd)>>4];
-    tmp[tmpc++]="0123456789abcdef"[(*cmd)&15];
-  }
-  egg_log("  %.*s",tmpc,tmp);
-  return 0;
-}
-
 int egg_client_init() {
 
   // Our hard-coded SCREENW,SCREENH must match the actual main framebuffer.
@@ -48,14 +36,11 @@ int egg_client_init() {
   inkeep_listen_joy(cb_joy,0);
   inkeep_listen_raw(cb_raw,0);
   
-  //XXX Testing map builder and loader.
-  struct map map={0};
-  if (map_from_res(&map,0,RID_map_start)>=0) {
-    egg_log("Loaded map. [0,0]=%02x [19,10]=%02x cmd[0]=%02x",map.v[0],map.v[10*COLC+19],map.commands[0]);
-    egg_log("Commands:");
-    map_for_each_command(&map,cb_log_mapcmd,0);
-  } else {
-    egg_log("!!! Failed to load map 'start' !!!");
+  if ((g.texid_tilesheet=egg_texture_new())<0) return -1;
+  
+  if (load_map(RID_map_start)<0) {
+    egg_log("Failed to load initial map.");
+    return -1;
   }
   
   return 0;
@@ -66,5 +51,6 @@ void egg_client_update(double elapsed) {
 }
 
 void egg_client_render() {
+  render_map();
   inkeep_render();
 }
