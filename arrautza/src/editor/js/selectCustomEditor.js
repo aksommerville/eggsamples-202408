@@ -1,7 +1,8 @@
 import { MapEditor } from "./MapEditor.js";
+import { TilesheetEditor } from "./TilesheetEditor.js";
 
 export function selectCustomEditor(path, serial, type, qual, rid, name, format) {
-  //console.log(`selectCustomEditor path=${path} type=${type} qual=${qual} rid=${rid} name=${name} format=${format}`);
   if (type === "map") return MapEditor;
+  if (type === "tilesheet") return TilesheetEditor;
   return null;
 }

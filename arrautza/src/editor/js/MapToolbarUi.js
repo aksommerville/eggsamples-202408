@@ -78,7 +78,7 @@ export class MapToolbarUi {
     const id = `MapToolbarUi-${this.nonce}-${k}`;
     const input = this.dom.spawn(this.element, "INPUT", ["toggle"], { type: "checkbox", id });
     const label = this.dom.spawn(this.element, "LABEL", { for: id });
-    const icon = this.dom.spawn(label, "SPAN");
+    const icon = this.dom.spawn(label, "SPAN", ["uibits"]);
     icon.style.backgroundPositionX = (iconix * -16) + "px";
     if (this.mapBus.visibility[k]) input.checked = true;
     input.addEventListener("change", () => {

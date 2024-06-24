@@ -25,6 +25,8 @@ export class MapPainter {
     this.toolInProgress = "";
     this.anchorx = 0; // monalisa
     this.anchory = 0;
+    this.pvx = 0;
+    this.pvy = 0;
     this.busListener = this.mapBus.listen(e => this.onBusEvent(e));
   }
   
@@ -51,10 +53,106 @@ export class MapPainter {
    * There is no "rainbowUpdate": It's just pencil + repair.
    ********************************************************/
    
-  repairUpdate() {
+  popcnt8(src) {
+    let c = 0;
+    for (let m=0x80; m; m>>=1) {
+      if (src & m) c++;
+    }
+    return c;
+  }
+   
+  calculateNeighborMask(x0, y0, family) {
+    let mask = 0;
+    const cellv = this.mapBus.loc.map.v;
+    for (let suby=0, bit=0x80; suby<3; suby++) {
+      let y = y0 + suby;
+      if (y < 0) y = 0;
+      else if (y >= this.mapBus.loc.map.h) y = this.mapBus.loc.map.h - 1;
+      for (let subx=0; subx<3; subx++) {
+        if ((suby === 1) && (subx === 1)) continue;
+        let x = x0 + subx;
+        if (x < 0) x = 0;
+        else if (x >= this.mapBus.loc.map.w) x = this.mapBus.loc.map.w - 1;
+        const tileid = cellv[y * this.mapBus.loc.map.w + x];
+        if (this.mapBus.tstables.family[tileid] === family) {
+          mask |= bit;
+        }
+        bit >>= 1;
+      }
+    }
+    return mask;
+  }
+   
+  repairUpdate1(p, x, y) {
+    if ((x < 0) || (x >= this.mapBus.loc.map.w)) return false;
+    if ((y < 0) || (y >= this.mapBus.loc.map.h)) return false;
+    const tileid0 = this.mapBus.loc.map.v[p];
+    const family = this.mapBus.tstables.family[tileid0];
+    if (!family) return false;
+    
+    const neiv = this.mapBus.tstables.neighbors;
+    if (neiv) {
+      const mask = this.calculateNeighborMask(x - 1, y - 1, family);
+      const candidates = [];
+      let totalWeight = 0;
+      let bitCount = 0;
+      for (let qtileid=0; qtileid<256; qtileid++) { // TODO Lots of iteration! Is it feasible to pre-index by family?
+        if (this.mapBus.tstables.family[qtileid] !== family) continue; // wrong family
+        if (this.mapBus.tstables.neighbors[qtileid] & ~mask) continue; // expects a neighbor we don't have
+        let weight = this.mapBus.tstables.weight[qtileid] || 0;
+        if (weight === 0xff) continue; // appointment only
+        if (!weight) weight = 0xff; // must be nonzero, and the default zero should be "likeliest"
+        const bc = this.popcnt8(this.mapBus.tstables.neighbors[qtileid]);
+        if (bc < bitCount) continue;
+        if (bc > bitCount) {
+          candidates.splice(0, candidates.length);
+          totalWeight = 0;
+          bitCount = bc;
+        }
+        candidates.push(qtileid);
+        totalWeight += weight;
+      }
+      if (!candidates.length) return false;
+      if (candidates.length > 2) {
+        let choice = Math.floor(Math.random() * totalWeight);
+        let tileid = tileid0;
+        for (let i=0; i<candidates.length; i++) {
+          choice -= this.mapBus.tstables.weight[candidates[i]] || 0xff;
+          if (choice < 0) { tileid = candidates[i]; break; }
+        }
+        candidates[0] = tileid;
+      }
+      if (candidates[0] === tileid0) return false;
+      this.mapBus.loc.map.v[p] = candidates[0];
+      return true;
+    }
+    
+    return false;
+  }
+   
+  repairUpdate(wide) {
     const p = this.mousePosition1d();
     if (p < 0) return;
-    //TODO repair tool
+    let changed = false;
+    if (wide) {
+      for (let dy=-1; dy<=1; dy++) {
+        for (let dx=-1; dx<=1; dx++) {
+          if (this.repairUpdate1(p + dy * this.mapBus.loc.map.w + dx, this.mapBus.mousecol + dx, this.mapBus.mouserow + dy)) changed = true;
+        }
+      }
+    } else {
+      changed = this.repairUpdate1(p, this.mapBus.mousecol, this.mapBus.mouserow);
+    }
+    if (changed) this.mapBus.dirty();
+  }
+   
+  repairBegin(wide) {
+    if (!this.mapBus.tstables.family) {
+      // Can't auto-anything without some family sets.
+      this.toolInProgress = "";
+      return;
+    }
+    this.repairUpdate(wide);
   }
   
   /* monalisa: Drop an anchor and paint a large verbatim region from the tilesheet.
@@ -321,11 +419,13 @@ export class MapPainter {
    *****************************************************/
    
   onBeginPaint() {
+    this.pvx = this.mapBus.mousecol;
+    this.pvy = this.mapBus.mouserow;
     this.toolInProgress = this.mapBus.effectiveTool;
     switch (this.mapBus.effectiveTool) {
       case "pencil": this.pencilUpdate(); break;
-      case "repair": this.repairUpdate(); break;
-      case "rainbow": this.pencilUpdate(); this.repairUpdate(); break;
+      case "repair": this.repairBegin(false); break;
+      case "rainbow": this.pencilUpdate(); this.repairBegin(true); break;
       case "monalisa": this.monalisaBegin(); break;
       case "pickup": this.pickupBegin(); break;
       case "poimove": this.poimoveBegin(); break;
@@ -336,6 +436,8 @@ export class MapPainter {
   }
   
   onEndPaint() {
+    this.pvx = -1;
+    this.pvy = -1;
     switch (this.toolInProgress) {
       // I don't think any of our tools will require an "end" step. But it's here if we need it.
     }
@@ -343,10 +445,13 @@ export class MapPainter {
   }
   
   onMotion() {
+    if ((this.mapBus.mousecol === this.pvx) && (this.mapBus.mouserow === this.pvy)) return;
+    this.pvx = this.mapBus.mousecol;
+    this.pvy = this.mapBus.mouserow;
     switch (this.toolInProgress) {
       case "pencil": this.pencilUpdate(); break;
-      case "repair": this.repairUpdate(); break;
-      case "rainbow": this.pencilUpdate(); this.repairUpdate(); break;
+      case "repair": this.repairUpdate(false); break;
+      case "rainbow": this.pencilUpdate(); this.repairUpdate(true); break;
       case "monalisa": this.monalisaUpdate(); break;
       case "poimove": this.poimoveUpdate(); break;
     }

@@ -29,7 +29,7 @@ input.toggle:checked + label {
   padding-right: 2px;
   padding-bottom: 2px;
 }
-input.toggle + label > span {
+input.toggle + label > span.uibits {
   width: 16px;
   height: 16px;
   background-image: url('/uibits.png');
@@ -43,7 +43,7 @@ input.toggle + label > span {
 }
 
 .MapToolbarUi {
-  min-height: 20px;
+  height: 40px;
   border-bottom: 1px solid #000;
   display: flex;
   flex-direction: row;
@@ -71,6 +71,18 @@ input.toggle + label > span {
   height: 16px;
   background-image: url('/uibits.png');
   background-position-y: -16px;
+}
+
+.MapToolbarUi input.toggle + label {
+  height: 16px;
+  width: 16px;
+}
+
+.MapToolbarUi .palette {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  margin: 4px;
 }
 
 .MapToolbarUi .tattle {
@@ -153,4 +165,32 @@ input.toggle + label > span {
 }
 .DoorModal .rid.existing {
   background-color: #afa;
+}
+
+.TilesheetEditor {
+  display: flex;
+  flex-direction: column;
+}
+
+.TilesheetEditor .toolbar {
+  display: flex;
+  flex-direction: row;
+}
+
+.TilesheetEditor > canvas {
+  flex: 1;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.TileModal .nmask {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+
+.TileModal .row {
+  display: flex;
+  flex-direction: row;
+  align-items: space-between;
 }

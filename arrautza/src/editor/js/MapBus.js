@@ -2,16 +2,20 @@
  * Since we have a bunch of separate components, let them share state across this special bus.
  */
  
+import { TilesheetEditor } from "./TilesheetEditor.js"; // For its static decode() function.
+import { Resmgr } from "./Resmgr.js";
+ 
 const MOD_SHIFT = 1;
 const MOD_CONTROL = 2;
 const MOD_ALT = 4;
  
 export class MapBus {
   static getDependencies() {
-    return [Window];
+    return [Window, Resmgr];
   }
-  constructor(window) {
+  constructor(window, resmgr) {
     this.window = window;
+    this.resmgr = resmgr;
     
     this.nextId = 1;
     this.listeners = [];
@@ -33,6 +37,7 @@ export class MapBus {
     this.mousesuby = 0;
     this.loc = null; // From MapStore: {plane,x,y,res,map}. Will always be populated before MapEditor builds its children.
     this.entrances = []; // From MapCanvasUi. MapStore.doors: {srcrid,srcx,srcy,dstrid,dstx,dsty}, we are "dst".
+    this.tstables = {}; // [name]:Uint8Array(256), from tilesheet resource. We update at setLoc()
     
     this.mod = 0;
     this.window.addEventListener("keyup", e => this.onKeyUp(e));
@@ -159,6 +164,16 @@ export class MapBus {
   
   setLoc(loc) {
     this.loc = loc;
+    this.tstables = {};
+    const imageName = this.loc.map.getCommandByKeyword("image");
+    const imageRes = this.resmgr.resByString(imageName, "image");
+    const rid = imageRes?.rid;
+    if (rid) {
+      const tsres = this.resmgr.resById("tilesheet", rid);
+      if (tsres) {
+        this.tstables = TilesheetEditor.decode(tsres.serial);
+      }
+    }
     this.broadcast({ type: "loc" });
   }
   
