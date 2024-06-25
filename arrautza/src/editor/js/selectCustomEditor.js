@@ -6,3 +6,7 @@ export function selectCustomEditor(path, serial, type, qual, rid, name, format) 
   if (type === "tilesheet") return TilesheetEditor;
   return null;
 }
+
+export function listCustomEditors(path, serial, type, qual, rid, name, format) {
+  return [MapEditor, TilesheetEditor];
+}

@@ -3,6 +3,7 @@
   
 #include <egg/egg.h>
 #include <stdlib/egg-stdlib.h>
+#include <inkeep/inkeep.h>
 #include "resid.h"
 
 /* These must remain in sync:
@@ -46,10 +47,12 @@
 #include "general/general.h"
   
 extern struct globals {
+  int texid_hero;
   int texid_tilesheet;
   uint16_t imageid_tilesheet;
   uint16_t mapid;
   struct map map;
+  int instate;//XXX
 } g;
 
 int load_map(uint16_t mapid);

@@ -60,4 +60,27 @@ void render_map() {
     }
   }
   egg_draw_tile(1,g.texid_tilesheet,vtxv,COLC*ROWC);
+  
+  //XXX TEMP try the hero
+  vtxv[0].x=100;
+  vtxv[0].y=100;
+  vtxv[0].tileid=0x10;
+  vtxv[0].xform=0;
+  vtxv[1].x=vtxv[0].x;
+  vtxv[1].y=vtxv[0].y-7;
+  vtxv[1].tileid=0x00;
+  vtxv[1].xform=0;
+  if (g.instate&INKEEP_BTNID_LEFT) {
+    vtxv[0].tileid=0x12;
+    vtxv[1].tileid=0x02;
+  } else if (g.instate&INKEEP_BTNID_RIGHT) {
+    vtxv[0].tileid=0x12;
+    vtxv[1].tileid=0x02;
+    vtxv[0].xform=EGG_XFORM_XREV;
+    vtxv[1].xform=EGG_XFORM_XREV;
+  } else if (g.instate&INKEEP_BTNID_UP) {
+    vtxv[0].tileid=0x11;
+    vtxv[1].tileid=0x01;
+  }
+  egg_draw_tile(1,g.texid_hero,vtxv,2);
 }
