@@ -1967,7 +1967,10 @@ this.soundEffects.push(node);node.onended=()=>{const p=this.soundEffects.indexOf
 };}egg_audio_event(chid,opcode,a,b){switch(opcode){case 0x80:this.endNote(chid,a,b);break;case 0x90:this.playNote(chid,a,b,5.0,0);
 break;}}egg_audio_get_playhead(){if(!this.song)return-1;let elapsed=this.context.currentTime-this.song.startTime;
 if(this.song.durations)elapsed%=this.song.durations;return(elapsed*1000)/this.song.msperqnote;}egg_audio_set_playhead(beat){if(!this.song)return;
-this.stopVoices();}endSong(){if(!this.song)return;this.song=null;this.stopVoices();}stopVoices(){for(const voice of this.voices)voice.release();
+for(const voice of this.voices)voice.release();const now=this.context.currentTime;for(let i=this.soundEffects.length;
+i-->0;){const node=this.soundEffects[i];if(node.eggStartTime&&(node.eggStartTime>=now)){node.disconnect();
+this.soundEffects.splice(i,1);}}const dsttime=(beat*this.song.msperqnote)/1000;this.song.rewind();this.song.fastForward(dsttime);
+}endSong(){if(!this.song)return;this.song=null;this.stopVoices();}stopVoices(){for(const voice of this.voices)voice.release();
 for(let chid=0;chid<8;chid++){if(this.channels[chid]){this.channels[chid].stop();this.channels[chid]=null;
 }}const now=this.context.currentTime;for(let i=this.soundEffects.length;i-->0;){const node=this.soundEffects[i];
 if(node.eggStartTime&&(node.eggStartTime>=now)){node.disconnect();this.soundEffects.splice(i,1);}}}beginSong(){if(!this.song)return;
@@ -1990,16 +1993,19 @@ this.msperqnote=(src[4]<<8)|src[5];this.startp=(src[6]<<8)|src[7];this.loopp=(sr
 this.src=src;this.channels=[];for(let srcp=10;srcp<42;srcp+=4){this.channels.push({pid:src[srcp],volume:src[srcp+1],pan:src[srcp+2],rsv:src[srcp+3],}
 );}this.startTime=audio.context.currentTime;this.readp=this.startp;this.readTime=this.startTime;this.durations=0;
 this.durationPending=0;}isResource(qual,songid){return((qual===this.qual)&&(songid===this.songid));}
-update(){const now=this.audio.context.currentTime;const later=now+SONG_READAHEAD_WINDOW_S;while(this.readTime<later){const event=this.readEvent();
+rewind(){this.startTime=this.audio.context.currentTime;this.readp=this.startp;this.readTime=this.startTime;
+this.durationPending=0;}fastForward(dsts){while(dsts>0){const event=this.readEvent(true);if(!event){this.audio.endSong();
+return;}if(typeof(event)==="number"){this.startTime-=event;dsts-=event;if(!this.durations)this.durationPending+=event;
+}}}update(){const now=this.audio.context.currentTime;const later=now+SONG_READAHEAD_WINDOW_S;while(this.readTime<later){const event=this.readEvent(false);
 if(!event){this.audio.endSong();return;}if(typeof(event)==="number"){this.readTime+=event;if(!this.durations)this.durationPending+=event;
-continue;}}}readEvent(){const lead=this.src[this.readp++];if(!lead){if(!this.durations)this.durations=this.durationPending;
-if(!this.repeat)return null;this.readp=this.loopp;return 0.010;}if(!(lead&0x80)){return lead/1000;}if((lead&0xf0)===0x80){const a=this.src[this.readp++]||0;
-const b=this.src[this.readp++]||0;let velocity=(lead&0x0f)<<3;velocity|=velocity>>4;const chid=a>>5;
-const noteid=((a&0x1f)<<2)|(b>>6);const durms=((b&0x3f)<<5);this.audio.playNote(chid,noteid,velocity,durms/1000,this.readTime);
+continue;}}}readEvent(skip){const lead=this.src[this.readp++];if(!lead){if(!this.durations)this.durations=this.durationPending;
+if(!this.repeat)return null;if(skip)return null;this.readp=this.loopp;return 0.010;}if(!(lead&0x80)){return lead/1000;
+}if((lead&0xf0)===0x80){const a=this.src[this.readp++]||0;const b=this.src[this.readp++]||0;let velocity=(lead&0x0f)<<3;
+velocity|=velocity>>4;const chid=a>>5;const noteid=((a&0x1f)<<2)|(b>>6);const durms=((b&0x3f)<<5);if(!skip)this.audio.playNote(chid,noteid,velocity,durms/1000,this.readTime);
 return"ok";}if((lead&0xf0)===0x90){const a=this.src[this.readp++]||0;let velocity=((lead&0x0c)<<2);velocity|=velocity>>2;
-velocity|=velocity>>4;const chid=((lead&0x03)<<1)|(a>>7);const noteid=(a&0x7f);this.audio.playNote(chid,noteid,velocity,0,this.readTime);
+velocity|=velocity>>4;const chid=((lead&0x03)<<1)|(a>>7);const noteid=(a&0x7f);if(!skip)this.audio.playNote(chid,noteid,velocity,0,this.readTime);
 return"ok";}if((lead&0xf8)===0xa0){const a=this.src[this.readp++]||0;const chid=lead&0x07;const v=(a<<6)|(a>>2);
-this.audio.changeWheel(chid,v,this.readTime);return"ok";}console.log(`Illegal song command ${lead}.`);
+if(!skip)this.audio.changeWheel(chid,v,this.readTime);return"ok";}console.log(`Illegal song command ${lead}.`);
 return null;}}class Channel{constructor(audio,pid,volume,pan){this.audio=audio;this.pid=pid;this.volume=volume/255.0;
 this.master=0.250;this.pan=(pan-0x80)/128.0;this.mode="noop";this.wheelRange=200;this.wheel=0;this.wheelCents=0;
 if(this.pid<0x00)this._initNoop();else if(this.pid<0x80)this._initBuiltin(audio);else if(this.pid<0x100)this._initDrum();

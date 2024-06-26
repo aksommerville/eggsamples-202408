@@ -14,6 +14,10 @@ void fake_pointer_render() {
     dstx=inkeep.mousex;
     dsty=inkeep.mousey;
   }
+  if ((dstx<0)||(dsty<0)) return;
+  int fbw=0,fbh=0;
+  egg_texture_get_header(&fbw,&fbh,0,1);
+  if ((dstx>=fbw)||(dsty>=fbh)) return;
   dstx-=inkeep.cursorhotx;
   dsty-=inkeep.cursorhoty;
   egg_draw_decal(1,inkeep.cursor_texid,dstx,dsty,inkeep.cursorx,inkeep.cursory,inkeep.cursorw,inkeep.cursorh,inkeep.cursorxform);
@@ -27,8 +31,6 @@ void fake_pointer_update(double elapsed) {
   inkeep.fakemousey+=elapsed*inkeep.fakemouse_speed*inkeep.cursordy;
   int ix=(int)inkeep.fakemousex;
   int iy=(int)inkeep.fakemousey;
-  if (ix<0) ix=0; else if (ix>=inkeep.screenw) ix=inkeep.screenw-1;
-  if (iy<0) iy=0; else if (iy>=inkeep.screenh) iy=inkeep.screenh-1;
   if (inkeep.mode==INKEEP_MODE_TOUCH) {
     if ((ix!=inkeep.touchx)||(iy!=inkeep.touchy)) {
       inkeep.fakemouse_soft_hide=0;
