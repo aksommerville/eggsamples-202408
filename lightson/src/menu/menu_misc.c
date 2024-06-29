@@ -49,7 +49,7 @@ static void _misc_render(struct menu *menu) {
     tile_renderer_string(menu->tile_renderer,8,y,tmp,tmpc);
     y+=8;
   }
-  if (((tmpc=misc_repr_time(tmp,sizeof(tmp),"Game time",egg_time_real()-start_real_time))>0)&&(tmpc<=sizeof(tmp))) {
+  if (((tmpc=misc_repr_time(tmp,sizeof(tmp),"Game time",total_game_time))>0)&&(tmpc<=sizeof(tmp))) {
     tile_renderer_string(menu->tile_renderer,8,y,tmp,tmpc);
     y+=8;
   }
