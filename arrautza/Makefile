@@ -29,6 +29,13 @@ EXE_BUILDER:=$(OUTDIR)/builder
 # Which thing to run by default? run-rom, run-bundled, run-native
 run:run-rom
 
+# List generated C files, and the rules to generate them.
+# These must locate under MIDDIR.
+GENCFILES:=$(addprefix $(MIDDIR)/, \
+  general/sprctl.c \
+)
+$(MIDDIR)/general/sprctl.c:src/arrautza.h $(EXE_BUILDER);$(PRECMD) $(EXE_BUILDER) -o$@ $< -tsprctl
+
 # Wasm compiler and linker are required.
 # I recommend llvm (ie clang and wasm-ld). WASI-SDK should work too.
 # If you want to build exclusively true-native, you could skip the Wasm, but I'm not coding for that here.
@@ -65,19 +72,21 @@ DATAFILES:=$(filter src/data/%,$(SRCFILES))
 DATAFILES_MID:=$(patsubst src/data/%,$(MIDDIR)/data/%,$(DATAFILES))
 DATAFLAG:=$(MIDDIR)/dataflag
 $(shell $(EGGDEV) tocflag -o$(DATAFLAG) src/data --types=src/restypes)
-$(DATAHEADER):$(DATAFLAG) $(wildcard src/data/string/* src/data/sound/*) etc/tool/genhdr.js \
+$(DATAHEADER):$(DATAFLAG) $(wildcard src/data/string/* src/data/sound/*) etc/tool/genhdr.js src/restypes \
   ;$(PRECMD) $(EGGDEV) toc src/data --named-only --types=src/restypes | node etc/tool/genhdr.js -o$@ --types=src/restypes
 
 CFILES_BUILDER:=$(filter src/builder/%,$(CFILES))
 CFILES_GAME:=$(filter-out src/builder/%,$(CFILES))
-OFILES_WASM:=$(patsubst src/%.c,$(MIDDIR)/wasm/%.o,$(CFILES_GAME))
-OFILES_NATIVE:=$(patsubst src/%.c,$(MIDDIR)/native/%.o,$(filter-out src/stdlib/%,$(CFILES_GAME)))
+OFILES_WASM:=$(patsubst src/%.c,$(MIDDIR)/wasm/%.o,$(CFILES_GAME)) $(patsubst $(MIDDIR)/%.c,$(MIDDIR)/wasm/%.o,$(GENCFILES))
+OFILES_NATIVE:=$(patsubst src/%.c,$(MIDDIR)/native/%.o,$(filter-out src/stdlib/%,$(CFILES_GAME))) $(patsubst $(MIDDIR)/%.c,$(MIDDIR)/native/%.o,$(GENCFILES))
 OFILES_BUILDER:=$(patsubst src/builder/%.c,$(MIDDIR)/builder/%.o,$(CFILES_BUILDER))
 
 -include $(OFILES_WASM:.o=.d) $(OFILES_NATIVE:.o=.d) $(OFILES_BUILDER:.o=.d)
-$(MIDDIR)/wasm/%.o:src/%.c|$(DATAHEADER);$(PRECMD) $(CC_WASM) -o$@ $<
-$(MIDDIR)/native/%.o:src/%.c|$(DATAHEADER);$(PRECMD) $(CC_NATIVE) -o$@ $<
-$(MIDDIR)/builder/%.o:src/builder/%.c;$(PRECMD) $(CC_NATIVE) -o$@ $<
+$(MIDDIR)/wasm/%.o   :src/%.c|$(DATAHEADER);$(PRECMD) $(CC_WASM)   -o$@ $<
+$(MIDDIR)/native/%.o :src/%.c|$(DATAHEADER);$(PRECMD) $(CC_NATIVE) -o$@ $<
+$(MIDDIR)/wasm/%.o   :mid/%.c|$(DATAHEADER);$(PRECMD) $(CC_WASM)   -o$@ $<
+$(MIDDIR)/native/%.o :mid/%.c|$(DATAHEADER);$(PRECMD) $(CC_NATIVE) -o$@ $<
+$(MIDDIR)/builder/%.o:src/builder/%.c      ;$(PRECMD) $(CC_NATIVE) -o$@ $<
 
 WASM1:=$(MIDDIR)/data/wasm/1
 $(WASM1):$(OFILES_WASM);$(PRECMD) $(LD_WASM) -o$@ $^

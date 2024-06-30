@@ -37,6 +37,7 @@ Just `egg_res_get()` onto a `struct map` and validate length.
 
 ## Commands
 
+Generic command sizing works exactly the same as sprites:
 ```
 00     : Terminator.
 01..1f : No payload.

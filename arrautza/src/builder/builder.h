@@ -31,6 +31,7 @@ extern struct builder {
  */
 int builder_compile_map();
 int builder_compile_tilesheet();
+int builder_compile_sprctl();
 
 /* 1..63 on success, 0 on error. Type IDs are 6 bits and zero is forbidden.
  */

@@ -4,6 +4,8 @@
 #include <egg/egg.h>
 #include <stdlib/egg-stdlib.h>
 #include <inkeep/inkeep.h>
+#include "util/tile_renderer.h"
+#include "util/texcache.h"
 #include "resid.h"
 
 /* These must remain in sync:
@@ -44,18 +46,43 @@
   _(neighbors) \
   _(door)
 
+/* Sprite commands.
+ * Same idea as map commands (exact same length rules too).
+ */
+#define SPRITECMD_image     0x20 /* u16:imageid */
+#define SPRITECMD_tileid    0x21 /* u8:tileid u8:unused */
+#define SPRITECMD_xform     0x22 /* u8:tileid u8:unused */
+#define SPRITECMD_sprctl    0x23 /* u16:sprctl */
+#define SPRITECMD_groups    0x40 /* u32:grpmask */
+#define SPRITECMD_FOR_EACH \
+  _(image) \
+  _(tileid) \
+  _(xform) \
+  _(sprctl) \
+  _(groups)
+
 #include "general/general.h"
+
+/* Declare sprctl implementations here.
+ * Follow the pattern exactly: Our editor will read this file too.
+ */
+extern const struct sprctl sprctl_hero;
+extern const struct sprctl sprctl_animate;
+extern const struct sprctl sprctl_animate_once;
   
 extern struct globals {
-  int texid_hero;
   int texid_tilesheet;
   uint16_t imageid_tilesheet;
   uint16_t mapid;
   struct map map;
-  int instate;//XXX
+  int instate;
+  struct tile_renderer tile_renderer;
+  struct texcache texcache;
 } g;
 
 int load_map(uint16_t mapid);
+int load_neighbor(uint8_t mapcmd);
 void render_map();
+void check_sprites_footing(struct sprgrp *sprgrp);
   
 #endif

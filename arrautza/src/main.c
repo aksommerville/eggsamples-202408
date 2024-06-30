@@ -10,7 +10,9 @@ void egg_client_quit() {
 
 static void cb_joy(int plrid,int btnid,int value,int state,void *userdata) {
   //egg_log("%s %d.0x%04x=%d [0x%04x]",__func__,plrid,btnid,value,state);
-  g.instate=state;
+  if (!plrid) {
+    g.instate=state;
+  }
 }
 
 static void cb_raw(const union egg_event *event,void *userdata) {
@@ -38,7 +40,8 @@ int egg_client_init() {
   inkeep_listen_raw(cb_raw,0);
   
   if ((g.texid_tilesheet=egg_texture_new())<0) return -1;
-  if (egg_texture_load_image(g.texid_hero=egg_texture_new(),0,RID_image_hero)<0) return -1;
+  
+  sprgrpv_init();
   
   if (load_map(RID_map_start)<0) {
     egg_log("Failed to load initial map.");
@@ -50,9 +53,14 @@ int egg_client_init() {
 
 void egg_client_update(double elapsed) {
   inkeep_update(elapsed);
+  sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed);
+  check_sprites_footing(sprgrpv+SPRGRP_FOOTING);
+  // Any non-sprite update stuff goes here.
+  sprgrp_kill(sprgrpv+SPRGRP_DEATHROW);
 }
 
 void egg_client_render() {
   render_map();
+  sprgrp_render(sprgrpv+SPRGRP_RENDER);
   inkeep_render();
 }
