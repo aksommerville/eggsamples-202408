@@ -12,7 +12,7 @@
 
 0x44 1 2 34u16
 hero @8,7
-song song:feline_mind
+song song:courage_quest
 image image:meadow
 neighbore map:2
 neighbors map:4
