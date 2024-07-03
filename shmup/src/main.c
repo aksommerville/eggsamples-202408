@@ -26,6 +26,8 @@ static double show_perfect=0.0;
 static double show_wave=0.0;
 static int hiscore=0;
 static int new_hiscore=0;
+static int lock_cursor_retry=0;
+static int cursor_locked=0;
 
 static struct shot {
   int16_t x;
@@ -70,7 +72,11 @@ int egg_client_init() {
   egg_audio_play_song(0,1,0,1);
   egg_event_enable(EGG_EVENT_MMOTION,1);
   egg_event_enable(EGG_EVENT_MBUTTON,1);
-  egg_lock_cursor(1);
+  if (egg_lock_cursor(1)) {
+    cursor_locked=1;
+  } else {
+    lock_cursor_retry=1;
+  }
   srand_auto();
   stars_init();
   return 0;
@@ -214,10 +220,35 @@ static void check_monster_shot(struct shot *shot) {
   }
 }
 
+/* We tried to lock the cursor at startup.
+ * In web browsers, that should fail because there has been no user interaction yet.
+ * So we'll retry acquiring the lock just once, after a keyboard press or mouse click.
+ */
+ 
+static void check_lock_cursor_retry(const union egg_event *event,int eventc) {
+  int retry=0;
+  for (;eventc-->0;event++) {
+    switch (event->type) {
+      case EGG_EVENT_KEY: if (event->key.value) { retry=1; eventc=0; } break;
+      case EGG_EVENT_MBUTTON: if (event->mbutton.value) { retry=1; eventc=0; } break;
+      case EGG_EVENT_JOY: if (event->joy.value) { retry=1; eventc=0; } break;
+    }
+  }
+  if (!retry) return;
+  lock_cursor_retry=0;
+  if (egg_lock_cursor(1)) {
+    cursor_locked=1;
+  }
+}
+
+/* Update.
+ */
+
 void egg_client_update(double elapsed) {
   union egg_event eventv[16];
   int eventc;
   while ((eventc=egg_event_get(eventv,16))>0) {
+    if (lock_cursor_retry) check_lock_cursor_retry(eventv,eventc);
     const union egg_event *event=eventv;
     int i=eventc; for (;i-->0;event++) switch (event->type) {
       case EGG_EVENT_KEY: switch (event->key.keycode) {
@@ -233,11 +264,12 @@ void egg_client_update(double elapsed) {
           case EGG_JOYBTN_RP: if (event->joy.value) egg_request_termination(); break;
         } break;
       case EGG_EVENT_MMOTION: {
+          if (!cursor_locked) break;
           herox+=event->mmotion.x;
           if (herox<0.0) herox+=128.0;
           else if (herox>=128.0) herox-=128.0;
         } break;
-      case EGG_EVENT_MBUTTON: if ((event->mbutton.btnid==1)&&(event->mbutton.value==1)) fire_laser(); break;
+      case EGG_EVENT_MBUTTON: if (cursor_locked&&(event->mbutton.btnid==1)&&(event->mbutton.value==1)) fire_laser(); break;
     }
     if (eventc<16) break;
   }
