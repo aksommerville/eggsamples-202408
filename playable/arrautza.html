@@ -1939,8 +1939,9 @@ this._checkCursorVisibility(this.evtmask&mouseEvents);}break;case Input.EGG_EVEN
 }else{this.accelerometerDisable();}}break;}return enable?1:0;}egg_show_cursor(show){this.cursorDesired=!!show;
 const mouseEvents=(1<<Input.EGG_EVENT_MMOTION)|(1<<Input.EGG_EVENT_MBUTTON)|(1<<Input.EGG_EVENT_MWHEEL);
 this._checkCursorVisibility(this.evtmask&mouseEvents);}egg_lock_cursor(lock){if(!this.canvas||!this.canvas.requestPointerLock)return 0;
-if(lock){if(this.mouseLocked)return 1;this.mouseLocked=true;this.canvas.requestPointerLock().then(rsp=>{}
-).catch(e=>{this.mouseLocked=false;});}else if(this.mouseLocked){this.mouseLocked=false;document.exitPointerLock();
+if(lock){if(this.mouseLocked)return 1;if(navigator.userActivation?.hasBeenActive===false){return 0;}
+this.mouseLocked=true;this.canvas.requestPointerLock().then(rsp=>{}).catch(e=>{console.log(`canvas.requestPointerLock failed`,e);
+this.mouseLocked=false;});}else if(this.mouseLocked){this.mouseLocked=false;document.exitPointerLock();
 }return 1;}egg_joystick_devid_by_index(p){if(p<0)return 0;for(let i=0;i<this.gamepads.length;i++){if(!this.gamepads[i])continue;
 if(!p--)return i+1;}return 0;}egg_joystick_get_ids(vidp,pidp,verp,devid){const local=this.gamepads[devid-1];
 if(!local||(local.devid!==devid))return;let vid=0,pid=0,version=0;let match;if(match=local.id.match(/Vendor: ([0-9a-fA-F]{4})/)){vid=parseInt(match[1],16);
