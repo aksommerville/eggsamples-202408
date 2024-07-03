@@ -8,6 +8,8 @@ struct sprite_hero {
   int pvinput;
   int facedir; // DIR_N,DIR_W,DIR_E,DIR_S
   int indx,indy; // Input state, digested to (-1,0,1).
+  double animclock;
+  int animframe;
 };
 
 #define SPRITE ((struct sprite_hero*)sprite)

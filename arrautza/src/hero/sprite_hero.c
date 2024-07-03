@@ -18,6 +18,50 @@ static int _hero_init(struct sprite *sprite) {
   return 0;
 }
 
+/* Motion.
+ */
+ 
+static void hero_begin_motion(struct sprite *sprite,int dx,int dy) {
+  if (!SPRITE->indx&&!SPRITE->indy) {
+    SPRITE->animframe=0;
+    SPRITE->animclock=0.200;
+  }
+  if (dx) {
+    SPRITE->indx=dx;
+    if (dx<0) {
+      SPRITE->facedir=DIR_W;
+    } else {
+      SPRITE->facedir=DIR_E;
+    }
+  } else if (dy) {
+    SPRITE->indy=dy;
+    if (dy<0) {
+      SPRITE->facedir=DIR_N;
+    } else {
+      SPRITE->facedir=DIR_S;
+    }
+  }
+}
+
+static void hero_end_motion(struct sprite *sprite,int dx,int dy) {
+  if (dx) {
+    SPRITE->indx=0;
+    if (SPRITE->indy<0) {
+      SPRITE->facedir=DIR_N;
+    } else if (SPRITE->indy>0) {
+      SPRITE->facedir=DIR_S;
+    }
+  } else if (dy) {
+    SPRITE->indy=0;
+    if (SPRITE->indx<0) {
+      SPRITE->facedir=DIR_W;
+    } else if (SPRITE->indx>0) {
+      SPRITE->facedir=DIR_E;
+    }
+  }
+  SPRITE->animframe=0;
+}
+
 /* Update.
  */
  
@@ -25,25 +69,28 @@ static void _hero_update(struct sprite *sprite,double elapsed) {
   if (g.instate!=SPRITE->pvinput) {
     #define PRESS(tag) ((g.instate&INKEEP_BTNID_##tag)&&!(SPRITE->pvinput&INKEEP_BTNID_##tag))
     #define RELEASE(tag) (!(g.instate&INKEEP_BTNID_##tag)&&(SPRITE->pvinput&INKEEP_BTNID_##tag))
-    //TODO generalize this a bit, it's only going to get more complex:
-    if (PRESS(LEFT)) { SPRITE->facedir=DIR_W; SPRITE->indx=-1; }
-    else if (RELEASE(LEFT)&&(SPRITE->indx<0)) SPRITE->indx=0;
-    if (PRESS(RIGHT)) { SPRITE->facedir=DIR_E; SPRITE->indx=1; }
-    else if (RELEASE(RIGHT)&&(SPRITE->indx>0)) SPRITE->indx=0;
-    if (PRESS(UP)) { SPRITE->facedir=DIR_N; SPRITE->indy=-1; }
-    else if (RELEASE(UP)&&(SPRITE->indy<0)) SPRITE->indy=0;
-    if (PRESS(DOWN)) { SPRITE->facedir=DIR_S; SPRITE->indy=1; }
-    else if (RELEASE(DOWN)&&(SPRITE->indy>0)) SPRITE->indy=0;
+    if (PRESS(LEFT)) hero_begin_motion(sprite,-1,0); else if (RELEASE(LEFT)&&(SPRITE->indx<0)) hero_end_motion(sprite,-1,0);
+    if (PRESS(RIGHT)) hero_begin_motion(sprite,1,0); else if (RELEASE(RIGHT)&&(SPRITE->indx>0)) hero_end_motion(sprite,1,0);
+    if (PRESS(UP)) hero_begin_motion(sprite,0,-1); else if (RELEASE(UP)&&(SPRITE->indy<0)) hero_end_motion(sprite,0,-1);
+    if (PRESS(DOWN)) hero_begin_motion(sprite,0,1); else if (RELEASE(DOWN)&&(SPRITE->indy>0)) hero_end_motion(sprite,0,1);
     #undef PRESS
     #undef RELEASE
     SPRITE->pvinput=g.instate;
   }
   if (SPRITE->indx||SPRITE->indy) {
     //TODO Speed ramp up and down
-    const double speed=6.0; // m/s
+    const double speed=5.0; // m/s
     sprite->x+=SPRITE->indx*elapsed*speed;
     sprite->y+=SPRITE->indy*elapsed*speed;
     //TODO Physics
+    if ((SPRITE->animclock-=elapsed)<=0.0) {
+      SPRITE->animclock+=0.150;
+      if (++(SPRITE->animframe)>=4) {
+        SPRITE->animframe=0;
+      }
+    }
+  } else {
+    SPRITE->animframe=1;
   }
 }
 
@@ -59,20 +106,35 @@ static void _hero_render(struct sprite *sprite) {
   switch (SPRITE->facedir) {
   
     case DIR_N: {
-        tile_renderer_tile(&g.tile_renderer,x,y-8,0x01,0);
-        tile_renderer_tile(&g.tile_renderer,x,y,0x11,0);
+        uint8_t bodytileid=0x11;
+        if (SPRITE->indx||SPRITE->indy) switch (SPRITE->animframe) {
+          case 0: bodytileid=0x21; break;
+          case 2: bodytileid=0x31; break;
+        }
+        tile_renderer_tile(&g.tile_renderer,x,y-((SPRITE->animframe>=2)?7:8),0x01,0);
+        tile_renderer_tile(&g.tile_renderer,x,y,bodytileid,0);
       } break;
       
     case DIR_S: {
-        tile_renderer_tile(&g.tile_renderer,x,y,0x10,0);
-        tile_renderer_tile(&g.tile_renderer,x,y-8,0x00,0);
+        uint8_t bodytileid=0x10;
+        if (SPRITE->indx||SPRITE->indy) switch (SPRITE->animframe) {
+          case 0: bodytileid=0x20; break;
+          case 2: bodytileid=0x30; break;
+        }
+        tile_renderer_tile(&g.tile_renderer,x,y,bodytileid,0);
+        tile_renderer_tile(&g.tile_renderer,x,y-((SPRITE->animframe>=2)?7:8),0x00,0);
       } break;
       
     case DIR_W:
     case DIR_E: {
+        uint8_t bodytileid=0x12;
+        if (SPRITE->indx||SPRITE->indy) switch (SPRITE->animframe) {
+          case 0: bodytileid=0x22; break;
+          case 2: bodytileid=0x32; break;
+        }
         uint8_t xform=(SPRITE->facedir==DIR_E)?EGG_XFORM_XREV:0;
-        tile_renderer_tile(&g.tile_renderer,x,y,0x12,xform);
-        tile_renderer_tile(&g.tile_renderer,x,y-8,0x02,xform);
+        tile_renderer_tile(&g.tile_renderer,x,y,bodytileid,xform);
+        tile_renderer_tile(&g.tile_renderer,x,y-((SPRITE->animframe>=2)?7:8),0x02,xform);
       } break;
       
   }
