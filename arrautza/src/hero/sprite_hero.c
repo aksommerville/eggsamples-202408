@@ -15,6 +15,13 @@ static int _hero_init(struct sprite *sprite) {
   sprite->tileid=0x00;
   sprite->xform=0;
   SPRITE->facedir=DIR_S;
+  sprite_set_hitbox(sprite,0.500,0.625,0.0,0.0);
+  sprite->invmass=128;
+  sprite->mapsolids=(
+    (1<<MAP_PHYSICS_SOLID)|
+    (1<<MAP_PHYSICS_WATER)|
+    (1<<MAP_PHYSICS_HOLE)|
+  0);
   return 0;
 }
 
@@ -78,11 +85,9 @@ static void _hero_update(struct sprite *sprite,double elapsed) {
     SPRITE->pvinput=g.instate;
   }
   if (SPRITE->indx||SPRITE->indy) {
-    //TODO Speed ramp up and down
     const double speed=5.0; // m/s
     sprite->x+=SPRITE->indx*elapsed*speed;
     sprite->y+=SPRITE->indy*elapsed*speed;
-    //TODO Physics
     if ((SPRITE->animclock-=elapsed)<=0.0) {
       SPRITE->animclock+=0.150;
       if (++(SPRITE->animframe)>=4) {
@@ -165,6 +170,13 @@ static void _hero_footing(struct sprite *sprite,int8_t pvcol,int8_t pvrow) {
   //TODO treadles, etc
 }
 
+/* Collision.
+ */
+ 
+static void _hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir) {
+  //egg_log("%s %p 0x%x %s",__func__,other,dir,other?"nonzero":"zero");
+}
+
 /* Type definition.
  */
  
@@ -176,6 +188,7 @@ const struct sprctl sprctl_hero={
     (1<<SPRGRP_RENDER)|
     (1<<SPRGRP_HERO)|
     (1<<SPRGRP_FOOTING)|
+    (1<<SPRGRP_SOLID)|
   0),
   .del=_hero_del,
   .init=_hero_init,
@@ -184,4 +197,5 @@ const struct sprctl sprctl_hero={
   .render=_hero_render,
   .calculate_bounds=_hero_calculate_bounds,
   .footing=_hero_footing,
+  .collision=_hero_collision,
 };

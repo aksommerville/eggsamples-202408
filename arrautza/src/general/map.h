@@ -9,6 +9,12 @@
 
 #define MAP_COMMANDS_LIMIT 512
 
+// Values for the physics table. (in "tilesheet" resource, not "map")
+#define MAP_PHYSICS_VACANT 0
+#define MAP_PHYSICS_SOLID 1
+#define MAP_PHYSICS_WATER 2
+#define MAP_PHYSICS_HOLE 3
+
 struct map {
   uint8_t v[COLC*ROWC];
   uint8_t commands[MAP_COMMANDS_LIMIT];

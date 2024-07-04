@@ -21,4 +21,6 @@
 #define DIR_S   0x02
 #define DIR_SE  0x01
 
+uint8_t dir_reverse(uint8_t dir);
+
 #endif

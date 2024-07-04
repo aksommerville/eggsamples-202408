@@ -18,6 +18,7 @@ Only they need to be in a constant order and only the last one can be truncated.
 Runtime only uses the `physics` table. A bunch of others exist only for the editor.
 
 `physics`: Describes how the tile should behave.
+See src/general/map.h.
 ```
 0x00 Vacant
 0x01 Solid

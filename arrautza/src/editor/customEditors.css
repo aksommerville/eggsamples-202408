@@ -194,3 +194,7 @@ input.toggle + label > span.uibits {
   flex-direction: row;
   align-items: space-between;
 }
+
+.SpriteEditor > table {
+  width: 100%;
+}

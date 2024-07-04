@@ -42,6 +42,7 @@ int egg_client_init() {
   if ((g.texid_tilesheet=egg_texture_new())<0) return -1;
   
   sprgrpv_init();
+  srand_auto();
   
   if (load_map(RID_map_start)<0) {
     egg_log("Failed to load initial map.");
@@ -54,6 +55,7 @@ int egg_client_init() {
 void egg_client_update(double elapsed) {
   inkeep_update(elapsed);
   sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed);
+  physics_update(sprgrpv+SPRGRP_SOLID,elapsed);
   check_sprites_footing(sprgrpv+SPRGRP_FOOTING);
   // Any non-sprite update stuff goes here.
   sprgrp_kill(sprgrpv+SPRGRP_DEATHROW);

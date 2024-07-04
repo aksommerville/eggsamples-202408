@@ -13,6 +13,23 @@ static int load_map_image(uint16_t imageid) {
   return 0;
 }
 
+/* Spawn sprite in new map.
+ */
+ 
+static int load_map_sprite(const uint8_t *cmd) {
+  double x=cmd[1]+0.5;
+  double y=cmd[2]+0.5;
+  int rid=(cmd[3]<<8)|cmd[4];
+  const struct sprdef *sprdef=sprdef_get(rid);
+  if (!sprdef) {
+    egg_log("ERROR: sprite:%d not found, required by map:%d",rid,g.mapid);
+    return -1; // Doesn't have to be fatal.
+  }
+  struct sprite *sprite=sprite_spawn(sprdef,x,y,cmd+5,4);
+  if (!sprite) return 0; // Sprites are allowed to self-delete during spawn. Real errors hopefully are rare.
+  return 0;
+}
+
 /* Read command for newly-loaded map.
  */
  
@@ -26,7 +43,7 @@ static int load_map_cb(const uint8_t *cmd,int cmdc,void *userdata) {
     case MAPCMD_hero: ctx->herox=cmd[1]+0.5; ctx->heroy=cmd[2]+0.5; break;
     case MAPCMD_song: egg_audio_play_song(0,(cmd[1]<<8)|cmd[2],0,1); break;
     case MAPCMD_image: return load_map_image((cmd[1]<<8)|cmd[2]);
-    //TODO neighbor[nswe], door
+    case MAPCMD_sprite: return load_map_sprite(cmd);
   }
   return 0;
 }
@@ -62,6 +79,9 @@ int load_map(uint16_t mapid) {
     sprite_del(hero);
     return -1;
   }
+  
+  // Let physics rebuild its view of static walls.
+  physics_rebuild_map();
   
   // Create the hero if we don't have one yet, and position it as needed.
   // The hero sprite instance stays alive across map loads.

@@ -19,7 +19,7 @@ Must be followed by arguments that produce the expected output length (see "Comm
 
 ## Binary Format
 
-Loose commands, with a hard-coded limit in `src/generic/sprite.h`, 128 currently.
+Loose commands, with a hard-coded limit in `src/generic/sprite.h`, 128 bytes currently.
 
 Leading byte of a command describes its length, usually.
 Zero is reserved as commands terminator.

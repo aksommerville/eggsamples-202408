@@ -36,6 +36,7 @@
 #define MAPCMD_neighborn 0x25 /* u16:mapid */
 #define MAPCMD_neighbors 0x26 /* u16:mapid */
 #define MAPCMD_door 0x80 /* u16:pt u16:mapid u16:dstpt u8:reserved1 u8:reserved2 */
+#define MAPCMD_sprite 0x81 /* u16:pt u16:spriteid u8:a u8:b u8:c u8:d */
 #define MAPCMD_FOR_EACH \
   _(hero) \
   _(song) \
@@ -44,21 +45,26 @@
   _(neighbore) \
   _(neighborn) \
   _(neighbors) \
-  _(door)
+  _(door) \
+  _(sprite)
 
 /* Sprite commands.
  * Same idea as map commands (exact same length rules too).
  */
 #define SPRITECMD_image     0x20 /* u16:imageid */
 #define SPRITECMD_tileid    0x21 /* u8:tileid u8:unused */
-#define SPRITECMD_xform     0x22 /* u8:tileid u8:unused */
+#define SPRITECMD_xform     0x22 /* u8:xform u8:unused */
 #define SPRITECMD_sprctl    0x23 /* u16:sprctl */
+#define SPRITECMD_layer     0x24 /* s8:layer u8:unused */
+#define SPRITECMD_invmass   0x25 /* u8:invmass u8:unused */
 #define SPRITECMD_groups    0x40 /* u32:grpmask */
 #define SPRITECMD_FOR_EACH \
   _(image) \
   _(tileid) \
   _(xform) \
   _(sprctl) \
+  _(layer) \
+  _(invmass) \
   _(groups)
 
 #include "general/general.h"

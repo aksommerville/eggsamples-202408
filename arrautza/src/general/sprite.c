@@ -32,10 +32,18 @@ struct sprite *sprite_new(const struct sprctl *sprctl) {
     sprite=calloc(1,sizeof(struct sprite));
   }
   if (!sprite) return 0;
+  
   sprite->refc=1;
   sprite->sprctl=sprctl;
   sprite->col=-128;
   sprite->row=-128;
+  sprite->hbl=sprite->hbr=sprite->hbu=sprite->hbd=0.5; // Default hitbox is exactly one tile.
+  sprite->mapsolids=(
+    (1<<MAP_PHYSICS_SOLID)|
+    (1<<MAP_PHYSICS_WATER)|
+    (1<<MAP_PHYSICS_HOLE)|
+  0);
+  
   if (sprite_add_group(sprite,KEEPALIVE)<0) {
     sprite_del(sprite);
     return 0;
@@ -60,11 +68,41 @@ struct sprite *sprite_new(const struct sprctl *sprctl) {
   return sprite;
 }
 
+/* Set hitbox.
+ */
+ 
+void sprite_set_hitbox(struct sprite *sprite,double w,double h,double offx,double offy) {
+  sprite->hbl=sprite->hbr=w*0.5;
+  sprite->hbu=sprite->hbd=h*0.5;
+  sprite->hbl-=offx;
+  sprite->hbr+=offx;
+  sprite->hbu-=offy;
+  sprite->hbd+=offy;
+}
+
 /* Apply sprdef, during spawn.
  */
  
-static int sprdef_apply(struct sprite *sprite) {
-  egg_log("%s:%d:%s: TODO",__FILE__,__LINE__,__func__);
+static int sprdef_apply_cb(const uint8_t *cmd,int cmdc,void *userdata) {
+  struct sprite *sprite=userdata;
+  switch (cmd[0]) {
+    case SPRITECMD_tileid: sprite->tileid=cmd[1]; break;
+    case SPRITECMD_xform: sprite->xform=cmd[1]; break;
+    case SPRITECMD_invmass: sprite->invmass=cmd[1]; break;
+  }
+  return 0;
+}
+ 
+static int sprdef_apply(struct sprite *sprite,const uint8_t *argv,int argc) {
+  sprite->imageid=sprite->sprdef->imageid;
+  if (sprite->sprdef->grpmask) {
+    int i=31; while (i-->0) {
+      if (sprite->sprdef->grpmask&(1<<i)) {
+        if (sprgrp_add(sprgrpv+i,sprite)<0) return -1;
+      }
+    }
+  }
+  sprdef_for_each_command(sprite->sprdef,sprdef_apply_cb,sprite);
   return 0;
 }
 
@@ -73,21 +111,22 @@ static int sprdef_apply(struct sprite *sprite) {
 
 struct sprite *sprite_spawn(
   const struct sprdef *sprdef,
-  double x,double y
+  double x,double y,
+  const uint8_t *argv,int argc
 ) {
   if (!sprdef) return 0;
   struct sprite *sprite=sprite_new(sprdef->sprctl);
   if (!sprite) return 0;
-  sprite->x=x;
-  sprite->y=y;
+  sprite->x=sprite->pvx=x;
+  sprite->y=sprite->pvy=y;
   sprite->sprdef=sprdef;
-  if (sprdef_apply(sprite)<0) {
+  if (sprdef_apply(sprite,argv,argc)<0) {
     sprite_kill(sprite);
     sprite_del(sprite);
     return 0;
   }
   if (sprite->sprctl&&sprite->sprctl->ready) {
-    if (sprite->sprctl->ready(sprite)<0) {
+    if (sprite->sprctl->ready(sprite,argv,argc)<0) {
       sprite_kill(sprite);
       sprite_del(sprite);
       return 0;
@@ -141,8 +180,6 @@ static int sprdef_decode_field(const uint8_t *cmd,int cmdc,void *userdata) {
   struct sprdef *sprdef=userdata;
   switch (cmd[0]) {
     case SPRITECMD_image: sprdef->imageid=(cmd[1]<<8)|cmd[2]; break;
-    case SPRITECMD_tileid: sprdef->tileid=cmd[1]; break;
-    case SPRITECMD_xform: sprdef->xform=cmd[1]; break;
     case SPRITECMD_sprctl: {
         int id=(cmd[1]<<8)|cmd[2];
         if (!(sprdef->sprctl=sprctl_by_id(id))) {
@@ -513,12 +550,12 @@ static void sprgrp_render_sort(struct sprgrp *sprgrp) {
     int first,last,d,i;
     if (sprgrp->sortdir>0) {
       first=0;
-      last=sprgrp->sprc-2;
+      last=sprgrp->sprc-1;
       d=1;
       sprgrp->sortdir=-1;
     } else {
       first=sprgrp->sprc-1;
-      last=1;
+      last=0;
       d=-1;
       sprgrp->sortdir=1;
     }
@@ -527,7 +564,7 @@ static void sprgrp_render_sort(struct sprgrp *sprgrp) {
       struct sprite *b=sprgrp->sprv[i+d];
       if (sprite_rendercmp(a,b)==d) {
         sprgrp->sprv[i]=b;
-        sprgrp->sprv[i+1]=a;
+        sprgrp->sprv[i+d]=a;
       }
     }
   }
@@ -585,4 +622,17 @@ void sprgrp_render(struct sprgrp *sprgrp) {
   }
   FLUSH_TILES
   #undef FLUSH_TILES
+  
+  // Debug: highlight hitbox of physics sprites.
+  if (0) {
+    struct sprite **p=sprgrpv[SPRGRP_SOLID].sprv;
+    for (i=sprgrpv[SPRGRP_SOLID].sprc;i-->0;p++) {
+      struct sprite *sprite=*p;
+      int x=(sprite->x-sprite->hbl)*TILESIZE;
+      int y=(sprite->y-sprite->hbu)*TILESIZE;
+      int w=(sprite->hbl+sprite->hbr)*TILESIZE;
+      int h=(sprite->hbu+sprite->hbd)*TILESIZE;
+      egg_draw_rect(1,x,y,w,h,0xff000080);
+    }
+  }
 }

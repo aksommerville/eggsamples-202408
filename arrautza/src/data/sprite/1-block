@@ -1,0 +1,5 @@
+image image:basic_sprites
+tileid 0x00u8 0u8
+groups 0x0000004cu32
+layer 100 0
+invmass 128 0

@@ -71,6 +71,30 @@ Expect that cost to scale with the size of the framebuffer.
 - [ ] 3d graphics with triangles. I'm really curious how far one can take that. Can I write a StarFox clone?
 - [ ] Touch events get processed twice (presumably being aliased as mouse by the browser)
 - [ ] Make a separate "eggzotics" repo for projects that target Egg in addition to some highly-constrained native platform (Playdate, TinyArcade, ...)
+- [ ] Wizard for copying a project.
+- [ ] arrautza
+- - [x] Sprite collisions
+- - [ ] Sprite editor
+- - - [ ] image
+- - - [ ] tileid
+- - - [ ] xform
+- - - [ ] sprctl
+- - - [ ] groups
+- - [ ] Map editor: Click to create POI command.
+- - [ ] Dialogue
+- - [ ] Cutscenes
+- - [ ] Hazards
+- - [ ] Combat
+- - - [ ] Sword
+- - - [ ] Bow
+- - - [ ] Shield
+- - [ ] Sprite controllers
+- - - [ ] Block that slides to nearest grid cell
+- - - [ ] Treadle
+- - - [ ] Animate forever, animate once
+- - [ ] Neighbor transitions
+- - [ ] Defer map transitions
+- - [ ] Index doors on map load
 
 ## Game Ideas
 
