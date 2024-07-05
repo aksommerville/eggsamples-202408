@@ -80,6 +80,16 @@ void sprite_set_hitbox(struct sprite *sprite,double w,double h,double offx,doubl
   sprite->hbd+=offy;
 }
 
+/* Update location tracking post-warp.
+ */
+ 
+void sprite_warped(struct sprite *sprite) {
+  sprite->pvx=sprite->x;
+  sprite->pvy=sprite->y;
+  if (sprite->x<0.0) sprite->col=-1; else if (sprite->x>=COLC) sprite->col=COLC; else sprite->col=(int8_t)sprite->x;
+  if (sprite->y<0.0) sprite->row=-1; else if (sprite->y>=ROWC) sprite->row=ROWC; else sprite->row=(int8_t)sprite->y;
+}
+
 /* Apply sprdef, during spawn.
  */
  

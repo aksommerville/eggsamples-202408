@@ -93,8 +93,8 @@ Expect that cost to scale with the size of the framebuffer.
 - - - [ ] Treadle
 - - - [ ] Animate forever, animate once
 - - [ ] Neighbor transitions
-- - [ ] Defer map transitions
-- - [ ] Index doors on map load
+- - [ ] Defer map load
+- - [x] Index doors on map load
 
 ## Game Ideas
 

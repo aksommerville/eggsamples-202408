@@ -44,7 +44,7 @@ int egg_client_init() {
   sprgrpv_init();
   srand_auto();
   
-  if (load_map(RID_map_start)<0) {
+  if (load_map(RID_map_start,-1,-1)<0) {
     egg_log("Failed to load initial map.");
     return -1;
   }

@@ -40,10 +40,26 @@ struct load_map_context {
 static int load_map_cb(const uint8_t *cmd,int cmdc,void *userdata) {
   struct load_map_context *ctx=userdata;
   switch (cmd[0]) {
+    
+    // Call out commands that need some action taken at load.
+    // Other things we can ignore. One can reread the commands at any time, it's cheap.
     case MAPCMD_hero: ctx->herox=cmd[1]+0.5; ctx->heroy=cmd[2]+0.5; break;
     case MAPCMD_song: egg_audio_play_song(0,(cmd[1]<<8)|cmd[2],0,1); break;
     case MAPCMD_image: return load_map_image((cmd[1]<<8)|cmd[2]);
     case MAPCMD_sprite: return load_map_sprite(cmd);
+    
+    // All commands that begin with a position and need recorded in poibits.
+    // We're just marking the cell as "interesting", so when the hero steps here
+    // he can very quickly know whether to read all the commands again.
+    case MAPCMD_door:
+      {
+        uint8_t col=cmd[1];
+        uint8_t row=cmd[2];
+        if ((col<COLC)&&(row<ROWC)) {
+          int p=row*COLC+col;
+          g.poibits[p>>3]|=0x80>>(p&7);
+        }
+      } break;
   }
   return 0;
 }
@@ -51,7 +67,8 @@ static int load_map_cb(const uint8_t *cmd,int cmdc,void *userdata) {
 /* Load map.
  */
  
-int load_map(uint16_t mapid) {
+int load_map(uint16_t mapid,int dstx,int dsty) {
+  egg_log("%s(%d,%d,%d)",__func__,mapid,dstx,dsty);
 
   // Capture the hero sprite if there is one, then kill them all.
   //TODO Are we doing multiplayer? That changes things a lot. I'm assuming singleplayer for now.
@@ -65,6 +82,7 @@ int load_map(uint16_t mapid) {
   
   // Acquire the map and run its commands.
   g.mapid=mapid;
+  memset(g.poibits,0,sizeof(g.poibits));
   int c=egg_res_get(&g.map,sizeof(g.map),EGG_RESTYPE_map,0,mapid);
   if ((c<COLC*ROWC)||(c>sizeof(struct map))) {
     egg_log("Invalid size %d for map:%d. Must be in %d..%d.",c,mapid,COLC*ROWC,(int)sizeof(struct map));
@@ -91,13 +109,19 @@ int load_map(uint16_t mapid) {
     hero->y=ctx.heroy;
   } else {
     if (sprgrp_add(sprgrpv+SPRGRP_KEEPALIVE,hero)<0) return -1;
-    //TODO If we entered through a door, position at its exit.
-    // Normally on a map change, the hero is OOB in one direction. Find that direction and slide him one screenful.
-    if (hero->x<0.0) hero->x+=COLC;
-    else if (hero->y<0.0) hero->y+=ROWC;
-    else if (hero->x>=COLC) hero->x-=COLC;
-    else if (hero->y>=ROWC) hero->y-=ROWC;
+    // If they gave us a destination point, apply it. (for doors)
+    if ((dstx>=0)&&(dsty>=0)&&(dstx<COLC)&&(dsty<ROWC)) {
+      hero->x=dstx+0.5;
+      hero->y=dsty+0.5;
+    } else {
+      // Normally on a map change, the hero is OOB in one direction. Find that direction and slide him one screenful.
+      if (hero->x<0.0) hero->x+=COLC;
+      else if (hero->y<0.0) hero->y+=ROWC;
+      else if (hero->x>=COLC) hero->x-=COLC;
+      else if (hero->y>=ROWC) hero->y-=ROWC;
+    }
   }
+  sprite_warped(hero);
   
   return 0;
 }
@@ -108,7 +132,7 @@ int load_map(uint16_t mapid) {
 int load_neighbor(uint8_t mapcmd) {
   int mapid=map_get_command(&g.map,mapcmd);
   if (mapid<1) return -1;
-  return load_map(mapid);//XXX Defer the actual load until the stack drains.
+  return load_map(mapid,-1,-1);//XXX Defer the actual load until the stack drains.
 }
 
 /* Render map.

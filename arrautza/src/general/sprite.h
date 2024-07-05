@@ -59,6 +59,11 @@ struct sprite *sprite_spawn(
  */
 void sprite_set_hitbox(struct sprite *sprite,double w,double h,double offx,double offy);
 
+/* Rewrite some transient bookkeeping to pretend the sprite was always in its current position.
+ * In particular, if it's in the FOOTING group, one event might be skipped.
+ */
+void sprite_warped(struct sprite *sprite);
+
 /* sprctl: Static definition of a sprite controller.
  * Any sprite with custom logic must have a sprctl.
  * Decorative sprites, or those controlled by some other controller, might not.

@@ -81,12 +81,13 @@ extern struct globals {
   uint16_t imageid_tilesheet;
   uint16_t mapid;
   struct map map;
+  uint8_t poibits[(COLC*ROWC+7)>>3]; // LRTB cell index big-endianly. Nonzero if something exists at that cell.
   int instate;
   struct tile_renderer tile_renderer;
   struct texcache texcache;
 } g;
 
-int load_map(uint16_t mapid);
+int load_map(uint16_t mapid,int dstx,int dsty); // dst OOB for automatic positioning
 int load_neighbor(uint8_t mapcmd);
 void render_map();
 void check_sprites_footing(struct sprgrp *sprgrp);
