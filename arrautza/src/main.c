@@ -61,8 +61,22 @@ void egg_client_update(double elapsed) {
   sprgrp_kill(sprgrpv+SPRGRP_DEATHROW);
 }
 
+//XXX Testing logo.
+static int texid_logo=0;
+static int w_logo,h_logo;
+
 void egg_client_render() {
   render_map();
   sprgrp_render(sprgrpv+SPRGRP_RENDER);
   inkeep_render();
+  
+  if (0) { // XXX enable to show a sketch of the intro splash, oooh ooh it's so pretty
+    if (!texid_logo) {
+      texid_logo=egg_texture_new();
+      egg_texture_load_image(texid_logo,0,RID_image_logo);
+      egg_texture_get_header(&w_logo,&h_logo,0,texid_logo);
+    }
+    egg_draw_rect(1,0,0,SCREENW,SCREENH,0x5b1919ff);
+    egg_draw_decal(1,texid_logo,((COLC*TILESIZE)>>1)-(w_logo>>1),((ROWC*TILESIZE)>>1)-(h_logo>>1),0,0,w_logo,h_logo,0);
+  }
 }
