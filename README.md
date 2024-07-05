@@ -92,9 +92,10 @@ Expect that cost to scale with the size of the framebuffer.
 - - - [ ] Block that slides to nearest grid cell
 - - - [ ] Treadle
 - - - [ ] Animate forever, animate once
-- - [ ] Neighbor transitions
-- - [ ] Defer map load
+- - [x] Neighbor transitions
+- - [x] Defer map load
 - - [x] Index doors on map load
+- - [ ] Possible to enter some invalid state and get stuck, by walking NE thru two transitions (even after deferred load and transitions).
 
 ## Game Ideas
 

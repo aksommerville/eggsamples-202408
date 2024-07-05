@@ -75,21 +75,55 @@
 extern const struct sprctl sprctl_hero;
 extern const struct sprctl sprctl_animate;
 extern const struct sprctl sprctl_animate_once;
+
+#define TRANSITION_NONE        0
+#define TRANSITION_PAN_LEFT    1 /* Pans are named for the direction of the camera's or hero's movement. */
+#define TRANSITION_PAN_RIGHT   2 /* So the content is actually moving opposite the named direction. */
+#define TRANSITION_PAN_UP      3 /* (I'm not sure if a convention exists among film people, maybe I've got it backward) */
+#define TRANSITION_PAN_DOWN    4 /* ...per Wil, we got it right except they say "truck" and "pedestal", "pan" is rotation. */
+#define TRANSITION_DISSOLVE    5 /* One frame directly into the next. */
+#define TRANSITION_FADE_BLACK  6 /* A=>Black=>B */
+#define TRANSITION_SPOTLIGHT   7 /* Zoop into one focus point, to black, then zoop out from the other focus point. */
   
 extern struct globals {
+  
   int texid_tilesheet;
   uint16_t imageid_tilesheet;
   uint16_t mapid;
+  struct {
+    uint16_t mapid;
+    int dstx,dsty;
+    int transition;
+  } mapnext;
   struct map map;
   uint8_t poibits[(COLC*ROWC+7)>>3]; // LRTB cell index big-endianly. Nonzero if something exists at that cell.
+  
   int instate;
+  
+  int texid_transtex; // Contains the outgoing frame during a transition.
+  double transclock; // Counts down during transition.
+  double transtotal; // Full duration of transition. Constant during a transition.
+  int transition;
+  int transfx,transfy; // Focus point in old frame, for SPOTLIGHT. (for new frame, we find it dynamically).
+  uint32_t transrgba; // For FADE_BLACK and SPOTLIGHT. Alpha must be opaque.
+  int renderx,rendery; // Where to put the new frame. Relevant for PAN transitions.
+  int texid_spotlight;
+  
   struct tile_renderer tile_renderer;
   struct texcache texcache;
 } g;
 
-int load_map(uint16_t mapid,int dstx,int dsty); // dst OOB for automatic positioning
+/* These do not load the map immediately.
+ * They prepare (g.mapnext), which will be applied when the stack drains.
+ * (dstx,dsty) at load_map should be OOB for automatic positioning.
+ */
+int load_map(uint16_t mapid,int dstx,int dsty,int transition);
 int load_neighbor(uint8_t mapcmd);
-void render_map();
+
+// main.c calls this at strategic times to commit a map change. Noop if no change pending.
+int check_map_change();
+
+void render_map(int dsttexid);
 void check_sprites_footing(struct sprgrp *sprgrp);
   
 #endif

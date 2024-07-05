@@ -64,13 +64,27 @@ static int load_map_cb(const uint8_t *cmd,int cmdc,void *userdata) {
   return 0;
 }
 
-/* Load map.
+/* Should we remove hero, when rendering the "from" frame for this transition?
+ * I think only the PANs will want yes.
  */
  
-int load_map(uint16_t mapid,int dstx,int dsty) {
-  egg_log("%s(%d,%d,%d)",__func__,mapid,dstx,dsty);
+static int transition_should_hide_hero(int transition) {
+  switch (transition) {
+    case TRANSITION_PAN_LEFT:
+    case TRANSITION_PAN_RIGHT:
+    case TRANSITION_PAN_UP:
+    case TRANSITION_PAN_DOWN:
+      return 1;
+  }
+  return 0;
+}
 
-  // Capture the hero sprite if there is one, then kill them all.
+/* Apply navigation immediately. Private: Must be reached via check_map_change().
+ */
+ 
+static int apply_map_change(uint16_t mapid,int dstx,int dsty,int transition) {
+  
+  // Capture the hero sprite if there is one.
   //TODO Are we doing multiplayer? That changes things a lot. I'm assuming singleplayer for now.
   struct sprite *hero=0;
   if (sprgrpv[SPRGRP_HERO].sprc>=1) {
@@ -78,9 +92,43 @@ int load_map(uint16_t mapid,int dstx,int dsty) {
     if (sprite_ref(hero)<0) return -1;
     sprgrp_remove(sprgrpv+SPRGRP_KEEPALIVE,hero); // Don't drop his groups!
   }
+  
+  // If a transition was requested, redraw the scene into a temporary texture.
+  if (transition) {
+    g.renderx=g.rendery=0;
+    render_map(g.texid_transtex);
+    if (transition_should_hide_hero(transition)) {
+      sprgrp_remove(sprgrpv+SPRGRP_RENDER,hero);
+    }
+    sprgrp_render(g.texid_transtex,sprgrpv+SPRGRP_RENDER);
+    sprgrp_add(sprgrpv+SPRGRP_RENDER,hero);
+    
+    /* Transition time and intermediate color (FADE_BLACK and SPOTLIGHT) are hard-coded here.
+     * You can change them universally right here, or figure out a more nuanced decision process if you want them variable.
+     * (transrgba) of black is an obvious choice, but I dislike it because my maps sometimes have a lot of black at the edges (think interiors).
+     * ...actually, with the time short enough, I think black is OK.
+     * Keep the time short. Bear in mind that play continues uninterrupted, even during transitions.
+     */
+    g.transrgba=0x000000ff;
+    g.transclock=g.transtotal=0.500;
+    
+    g.transition=transition;
+    if (hero) {
+      g.transfx=(int)(hero->x*TILESIZE);
+      g.transfy=(int)(hero->y*TILESIZE);
+    } else { 
+      g.transfx=SCREENW>>1;
+      g.transfy=SCREENH>>1;
+    }
+  } else {
+    g.transclock=0.0;
+  }
+
+  // Drop all the sprites. We're holding a STRONG reference to (hero), so it's not affected.
   sprgrp_kill(sprgrpv+SPRGRP_KEEPALIVE);
   
   // Acquire the map and run its commands.
+  g.mapnext.mapid=0;
   g.mapid=mapid;
   memset(g.poibits,0,sizeof(g.poibits));
   int c=egg_res_get(&g.map,sizeof(g.map),EGG_RESTYPE_map,0,mapid);
@@ -89,6 +137,7 @@ int load_map(uint16_t mapid,int dstx,int dsty) {
     sprite_del(hero);
     return -1;
   }
+  memset(((char*)&g.map)+c,0,sizeof(struct map)-c);
   struct load_map_context ctx={
     .herox=COLC*0.5,
     .heroy=ROWC*0.5,
@@ -126,26 +175,53 @@ int load_map(uint16_t mapid,int dstx,int dsty) {
   return 0;
 }
 
+/* Check for navigation and apply if requested.
+ */
+ 
+int check_map_change() {
+  if (!g.mapnext.mapid) return 0;
+  return apply_map_change(g.mapnext.mapid,g.mapnext.dstx,g.mapnext.dsty,g.mapnext.transition);
+}
+
+/* Load map.
+ */
+ 
+int load_map(uint16_t mapid,int dstx,int dsty,int transition) {
+  if (egg_res_get(0,0,EGG_RESTYPE_map,0,mapid)<1) return -1; // Fail immediately if it doesn't exist; don't defer.
+  g.mapnext.mapid=mapid;
+  g.mapnext.dstx=dstx;
+  g.mapnext.dsty=dsty;
+  g.mapnext.transition=transition;
+  return 0;
+}
+
 /* Load a neighbor map if it exists.
  */
  
 int load_neighbor(uint8_t mapcmd) {
   int mapid=map_get_command(&g.map,mapcmd);
   if (mapid<1) return -1;
-  return load_map(mapid,-1,-1);//XXX Defer the actual load until the stack drains.
+  int transition=TRANSITION_NONE;
+  switch (mapcmd) {
+    case MAPCMD_neighborw: transition=TRANSITION_PAN_LEFT; break;
+    case MAPCMD_neighbore: transition=TRANSITION_PAN_RIGHT; break;
+    case MAPCMD_neighborn: transition=TRANSITION_PAN_UP; break;
+    case MAPCMD_neighbors: transition=TRANSITION_PAN_DOWN; break;
+  }
+  return load_map(mapid,-1,-1,transition);
 }
 
 /* Render map.
  */
  
-void render_map() {
+void render_map(int dsttexid) {
   struct egg_draw_tile vtxv[COLC*ROWC];
   struct egg_draw_tile *vtx=vtxv;
-  int y=TILESIZE>>1;
+  int y=(TILESIZE>>1)+g.rendery;
   int yi=ROWC;
   const uint8_t *src=g.map.v;
   for (;yi-->0;y+=TILESIZE) {
-    int x=TILESIZE>>1;
+    int x=(TILESIZE>>1)+g.renderx;
     int xi=COLC;
     for (;xi-->0;x+=TILESIZE,vtx++,src++) {
       vtx->x=x;
@@ -154,7 +230,7 @@ void render_map() {
       vtx->xform=0;
     }
   }
-  egg_draw_tile(1,g.texid_tilesheet,vtxv,COLC*ROWC);
+  egg_draw_tile(dsttexid,g.texid_tilesheet,vtxv,COLC*ROWC);
 }
 
 /* Update footing for sprites in group.

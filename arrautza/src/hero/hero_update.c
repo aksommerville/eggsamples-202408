@@ -59,7 +59,9 @@ void hero_update(struct sprite *sprite,double elapsed) {
     #undef RELEASE
     SPRITE->pvinput=g.instate;
   }
-  if (SPRITE->indx||SPRITE->indy) {
+  if (SPRITE->motion_blackout>0.0) {
+    SPRITE->motion_blackout-=elapsed;
+  } else if (SPRITE->indx||SPRITE->indy) {
     const double speed=HERO_WALK_SPEED;
     sprite->x+=SPRITE->indx*elapsed*speed;
     sprite->y+=SPRITE->indy*elapsed*speed;

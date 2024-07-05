@@ -85,8 +85,9 @@ struct sprctl {
   /* Your bounds have been calculated -- render at that position and ignore (sprite->x,y).
    * If you implement this, sprite's (texid,tileid,xform) are not used (you can use them).
    * If you do not implement, the sprite renders as a single tile.
+   * If you use (g.tile_renderer), its (dsttexid) is already set correctly by the caller.
    */
-  void (*render)(struct sprite *sprite);
+  void (*render)(int dsttexid,struct sprite *sprite);
   
   /* Populate (bx,by,bw,bh) based on (x,y) and the arguments.
    * If your output is a single tile centered on (x,y), don't implement this.
@@ -194,7 +195,7 @@ extern struct sprgrp sprgrpv[32];
 // Special hooks that only main.c should need.
 void sprgrpv_init();
 void sprgrp_update(struct sprgrp *sprgrp,double elapsed);
-void sprgrp_render(struct sprgrp *sprgrp);
+void sprgrp_render(int dsttexid,struct sprgrp *sprgrp);
 
 /* Our approach to physics is that sprite controllers may move their sprite freely,
  * then it all gets rectified in a batch afterward.

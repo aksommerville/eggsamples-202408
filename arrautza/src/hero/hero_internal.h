@@ -14,12 +14,13 @@ struct sprite_hero {
   double animclock;
   int animframe;
   int pushing; // Clear on update, then it gets set during physics resolution.
+  double motion_blackout; // Motion is suppressed until this counts down.
 };
 
 #define SPRITE ((struct sprite_hero*)sprite)
 
 // hero_render.c
-void hero_render(struct sprite *sprite);
+void hero_render(int dsttexid,struct sprite *sprite);
 void hero_calculate_bounds(struct sprite *sprite,int tilesize,int addx,int addy);
 
 // hero_update.c

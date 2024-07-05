@@ -15,7 +15,8 @@ static int hero_footing_cb(const uint8_t *cmd,int cmdc,void *userdata) {
         int dstx=cmd[5];
         int dsty=cmd[6];
         // [7,8] exist and might mean something in the future.
-        load_map(mapid,dstx,dsty);
+        load_map(mapid,dstx,dsty,TRANSITION_SPOTLIGHT);
+        SPRITE->motion_blackout=0.500; // Come to a full stop during the transition. This is only for doors, not neighbor transitions.
       } return 1; // stop iteration. important!
       
     //TODO treadles. Should those be mapcmd or sprite?

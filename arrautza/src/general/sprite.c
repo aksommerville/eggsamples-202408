@@ -583,7 +583,7 @@ static void sprgrp_render_sort(struct sprgrp *sprgrp) {
 /* Render all sprites.
  */
 
-void sprgrp_render(struct sprgrp *sprgrp) {
+void sprgrp_render(int dsttexid,struct sprgrp *sprgrp) {
   int i;
 
   // Calculate the output position and coverage for each sprite.
@@ -599,12 +599,15 @@ void sprgrp_render(struct sprgrp *sprgrp) {
       sprite->bx=dstx-(TILESIZE>>1);
       sprite->by=dsty-(TILESIZE>>1);
     }
+    sprite->bx+=g.renderx;
+    sprite->by+=g.rendery;
   }
   
   // Advance the sort.
   sprgrp_render_sort(sprgrp);
   
   // Render all in order.
+  g.tile_renderer.dsttexid=dsttexid;
   int imageid=0;
   #define FLUSH_TILES if (imageid) { \
     tile_renderer_end(&g.tile_renderer); \
@@ -614,7 +617,7 @@ void sprgrp_render(struct sprgrp *sprgrp) {
     struct sprite *sprite=sprgrp->sprv[i];
     if (sprite->sprctl&&sprite->sprctl->render) {
       FLUSH_TILES
-      sprite->sprctl->render(sprite);
+      sprite->sprctl->render(dsttexid,sprite);
     } else if (!sprite->imageid) {
       // Skip it.
     } else {
@@ -632,6 +635,8 @@ void sprgrp_render(struct sprgrp *sprgrp) {
   }
   FLUSH_TILES
   #undef FLUSH_TILES
+  
+  g.tile_renderer.dsttexid=1;
   
   // Debug: highlight hitbox of physics sprites.
   if (0) {

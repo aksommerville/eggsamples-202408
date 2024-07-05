@@ -3,7 +3,7 @@
 /* Render.
  */
  
-void hero_render(struct sprite *sprite) {
+void hero_render(int dsttexid,struct sprite *sprite) {
   int x=sprite->bx+(sprite->bw>>1);
   int y=sprite->by+(sprite->bh>>1);
   int texid=texcache_get(&g.texcache,sprite->imageid);

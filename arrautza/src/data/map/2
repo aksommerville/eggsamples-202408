@@ -11,6 +11,7 @@ d2d3d4d5d6d73014223a3b3b3b3b1e2b2b2b2b2b
 02010002000002000002000903000101022a2b2b
 
 image image:meadow
+song song:courage_quest
 neighborw map:start
 neighbors map:3
 door @4,4 map:5 @9,8 0 0
