@@ -1,1 +1,6 @@
 1 Po-Russkiy
+
+hello_newgame   (New Game)
+hello_continue  (Continue)
+hello_quit      (Quit)
+hello_fineprint Russian might not work -- ASCII only

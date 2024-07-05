@@ -1,1 +1,7 @@
 1 English
+
+# "hello" strings are rendered with tiles and must not go outside ASCII.
+hello_newgame   New Game
+hello_continue  Continue
+hello_quit      Quit
+hello_fineprint (c) 2024 AK Sommerville

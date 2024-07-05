@@ -79,8 +79,11 @@ struct sprctl {
   
   /* Called every frame if you implement.
    * You can unjoin the UPDATE group to turn it off.
+   * Usually plain 'update' is the hook you want. 'update_bg' runs instead, when a modal is open.
+   * Physics, transitions, and any other global logic are all suspended during 'bg'.
    */
   void (*update)(struct sprite *sprite,double elapsed);
+  void (*update_bg)(struct sprite *sprite,double elapsed);
   
   /* Your bounds have been calculated -- render at that position and ignore (sprite->x,y).
    * If you implement this, sprite's (texid,tileid,xform) are not used (you can use them).
@@ -194,7 +197,7 @@ extern struct sprgrp sprgrpv[32];
 
 // Special hooks that only main.c should need.
 void sprgrpv_init();
-void sprgrp_update(struct sprgrp *sprgrp,double elapsed);
+void sprgrp_update(struct sprgrp *sprgrp,double elapsed,int bg);
 void sprgrp_render(int dsttexid,struct sprgrp *sprgrp);
 
 /* Our approach to physics is that sprite controllers may move their sprite freely,

@@ -486,13 +486,18 @@ void sprgrpv_init() {
 /* Update all sprites.
  */
 
-void sprgrp_update(struct sprgrp *sprgrp,double elapsed) {
+void sprgrp_update(struct sprgrp *sprgrp,double elapsed,int bg) {
   int i=sprgrp->sprc;
   while (i-->0) {
     struct sprite *sprite=sprgrp->sprv[i];
     if (!sprite->sprctl) continue;
-    if (!sprite->sprctl->update) continue;
-    sprite->sprctl->update(sprite,elapsed);
+    if (bg) {
+      if (!sprite->sprctl->update_bg) continue;
+      sprite->sprctl->update_bg(sprite,elapsed);
+    } else {
+      if (!sprite->sprctl->update) continue;
+      sprite->sprctl->update(sprite,elapsed);
+    }
   }
 }
 

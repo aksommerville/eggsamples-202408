@@ -32,6 +32,8 @@ int egg_client_init() {
     egg_log("Expected framebuffer size %dx%d, found %dx%d",SCREENW,SCREENH,screenw,screenh);
     return -1;
   }
+  
+  if (text_init()<0) return -1;
 
   if (inkeep_init()<0) return -1;
   inkeep_set_player_count(16);
@@ -42,12 +44,13 @@ int egg_client_init() {
   if ((g.texid_tilesheet=egg_texture_new())<0) return -1;
   if (egg_texture_upload(g.texid_transtex=egg_texture_new(),SCREENW,SCREENH,SCREENW<<2,EGG_TEX_FMT_RGBA,0,0)<0) return -1;
   if (egg_texture_load_image(g.texid_spotlight=egg_texture_new(),0,RID_image_spotlight)<0) return -1;
+  if (egg_texture_load_image(g.texid_font_tiles=egg_texture_new(),0,RID_image_font_tiles)<0) return -1;
   
   sprgrpv_init();
   srand_auto();
   
-  if ((load_map(RID_map_start,-1,-1,TRANSITION_NONE)<0)||(check_map_change()<0)) {
-    egg_log("Failed to load initial map.");
+  if (!menu_push_hello()) {
+    egg_log("Failed to initialize main menu!");
     return -1;
   }
   
@@ -58,18 +61,33 @@ int egg_client_init() {
  ******************************************************************************/
 
 void egg_client_update(double elapsed) {
-  if (g.transclock>0.0) {
-    if ((g.transclock-=elapsed)<=0.0) {
-      // Transition completed. Probably nothing we need to do.
-    }
-  }
   inkeep_update(elapsed);
-  sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed);
-  physics_update(sprgrpv+SPRGRP_SOLID,elapsed);
-  check_sprites_footing(sprgrpv+SPRGRP_FOOTING);
-  // Any non-sprite update stuff goes here.
-  sprgrp_kill(sprgrpv+SPRGRP_DEATHROW);
-  check_map_change();
+  
+  // When a menu is open, the one on top is basically the only thing active.
+  if (g.menuc) {
+    struct menu *menu=g.menuv[g.menuc-1];
+    if (menu->update) menu->update(menu,elapsed);
+    int i=g.menuc-1;
+    while (i-->0) {
+      menu=g.menuv[i];
+      if (menu->update_bg) menu->update_bg(menu,elapsed);
+    }
+    sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed,1);
+  
+  // No menu, normal game update.
+  } else {
+    if (g.transclock>0.0) {
+      if ((g.transclock-=elapsed)<=0.0) {
+        // Transition completed. Probably nothing we need to do.
+      }
+    }
+    sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed,0);
+    physics_update(sprgrpv+SPRGRP_SOLID,elapsed);
+    check_sprites_footing(sprgrpv+SPRGRP_FOOTING);
+    // Any non-sprite update stuff goes here.
+    sprgrp_kill(sprgrpv+SPRGRP_DEATHROW);
+    check_map_change();
+  }
 }
 
 /* Render.
@@ -175,16 +193,37 @@ static void render_game_transition(int transition,double p) {
 }
 
 void egg_client_render() {
-  g.renderx=g.rendery=0;
-  if (g.transclock>0.0) {
-    double p=1.0-g.transclock/g.transtotal;
-    render_game_transition(g.transition,p);
-  } else {
-    render_game_untransitioned();
+
+  // Search for an opaque menu, determine how many layers we actually need to draw.
+  int menup=0;
+  int menuc=g.menuc;
+  int i=menuc;
+  for (;i-->0;) {
+    struct menu *menu=g.menuv[i];
+    if (menu->opaque) {
+      menup=i;
+      menuc=g.menuc-i;
+      break;
+    }
+  }
+
+  // No menus, or the first one is not opaque, we need to draw the scene.
+  if (!menuc||!g.menuv[menup]->opaque) {
+    g.renderx=g.rendery=0;
+    if (g.transclock>0.0) {
+      double p=1.0-g.transclock/g.transtotal;
+      render_game_transition(g.transition,p);
+    } else {
+      render_game_untransitioned();
+    }
+    //TODO overlay
   }
   
-  //TODO overlay
-  //TODO menus
+  // Draw all the selected menus in order.
+  for (i=menuc;i-->0;menup++) {
+    struct menu *menu=g.menuv[menup];
+    if (menu->render) menu->render(menu);
+  }
   
   inkeep_render();
 }

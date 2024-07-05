@@ -6,6 +6,7 @@
 #include <inkeep/inkeep.h>
 #include "util/tile_renderer.h"
 #include "util/texcache.h"
+#include "util/text.h"
 #include "resid.h"
 
 /* These must remain in sync:
@@ -87,6 +88,7 @@ extern const struct sprctl sprctl_animate_once;
   
 extern struct globals {
   
+  int texid_font_tiles;
   int texid_tilesheet;
   uint16_t imageid_tilesheet;
   uint16_t mapid;
@@ -108,6 +110,9 @@ extern struct globals {
   uint32_t transrgba; // For FADE_BLACK and SPOTLIGHT. Alpha must be opaque.
   int renderx,rendery; // Where to put the new frame. Relevant for PAN transitions.
   int texid_spotlight;
+  
+  struct menu *menuv[MENU_LIMIT];
+  int menuc;
   
   struct tile_renderer tile_renderer;
   struct texcache texcache;
