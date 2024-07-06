@@ -76,6 +76,7 @@
 extern const struct sprctl sprctl_hero;
 extern const struct sprctl sprctl_animate;
 extern const struct sprctl sprctl_animate_once;
+extern const struct sprctl sprctl_chest;
 
 #define TRANSITION_NONE        0
 #define TRANSITION_PAN_LEFT    1 /* Pans are named for the direction of the camera's or hero's movement. */
@@ -85,6 +86,44 @@ extern const struct sprctl sprctl_animate_once;
 #define TRANSITION_DISSOLVE    5 /* One frame directly into the next. */
 #define TRANSITION_FADE_BLACK  6 /* A=>Black=>B */
 #define TRANSITION_SPOTLIGHT   7 /* Zoop into one focus point, to black, then zoop out from the other focus point. */
+
+/* Each item you can acquire has a unique ID in 1..ITEM_COUNT, which must be <256.
+ * Item zero may be used as "no item".
+ * The hero has an inventory of the size listed here, plus up to two items assigned to buttons.
+ * ITEM_COUNT should be no more than INVENTORY_SIZE+2.
+ * Each item also has an 8-bit qualifier. Count, level, or unused.
+ */
+#define ITEM_COUNT 16
+#define INVENTORY_SIZE 16
+#define QUAL_DISPLAY_NONE 0
+#define QUAL_DISPLAY_COUNT 1
+#define QUAL_DISPLAY_LEVEL 2
+extern struct item_metadata {
+  uint8_t qual_display;
+  uint8_t qual_init;
+  uint8_t qual_limit;
+} item_metadata[1+ITEM_COUNT];
+#define ITEM_SWORD 1
+#define ITEM_SHIELD 2
+#define ITEM_BOW 3
+#define ITEM_BOMB 4
+#define ITEM_RAFT 5
+#define ITEM_CLOAK 6
+#define ITEM_STOPWATCH 7
+#define ITEM_GOLD 8
+#define ITEM_HAMMER 9
+#define ITEM_COMPASS 10
+#define ITEM_FOR_EACH \
+  _(SWORD) \
+  _(SHIELD) \
+  _(BOW) \
+  _(BOMB) \
+  _(RAFT) \
+  _(CLOAK) \
+  _(STOPWATCH) \
+  _(GOLD) \
+  _(HAMMER) \
+  _(COMPASS)
   
 extern struct globals {
   
@@ -101,6 +140,7 @@ extern struct globals {
   uint8_t poibits[(COLC*ROWC+7)>>3]; // LRTB cell index big-endianly. Nonzero if something exists at that cell.
   
   int instate;
+  int menu_pause_selection; // Persists even when the menu doesn't exist.
   
   int texid_transtex; // Contains the outgoing frame during a transition.
   double transclock; // Counts down during transition.
@@ -116,6 +156,11 @@ extern struct globals {
   
   struct tile_renderer tile_renderer;
   struct texcache texcache;
+  
+  uint8_t inventory[INVENTORY_SIZE];
+  uint8_t aitem,bitem;
+  uint8_t itemqual[1+ITEM_COUNT];
+  uint8_t hp,hpmax;
 } g;
 
 /* These do not load the map immediately.
@@ -130,5 +175,11 @@ int check_map_change();
 
 void render_map(int dsttexid);
 void check_sprites_footing(struct sprgrp *sprgrp);
+void check_sprites_heronotify(struct sprgrp *observers,struct sprgrp *heroes);
+
+// An item is "possessed" if they've gotten it once, even if the count is zero. ie it should display in inventory.
+int item_possessed(int itemid);
+
+void acquire_item(int itemid,int count);
   
 #endif

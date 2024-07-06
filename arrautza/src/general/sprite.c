@@ -99,6 +99,7 @@ static int sprdef_apply_cb(const uint8_t *cmd,int cmdc,void *userdata) {
     case SPRITECMD_tileid: sprite->tileid=cmd[1]; break;
     case SPRITECMD_xform: sprite->xform=cmd[1]; break;
     case SPRITECMD_invmass: sprite->invmass=cmd[1]; break;
+    case SPRITECMD_layer: sprite->layer=cmd[1]; break;
   }
   return 0;
 }

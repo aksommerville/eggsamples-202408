@@ -40,7 +40,7 @@ $(MIDDIR)/general/sprctl.c:src/arrautza.h $(EXE_BUILDER);$(PRECMD) $(EXE_BUILDER
 # I recommend llvm (ie clang and wasm-ld). WASI-SDK should work too.
 # If you want to build exclusively true-native, you could skip the Wasm, but I'm not coding for that here.
 # Native compiler and linker are also required; we use them for 'builder'.
-CCWARN:=-Wno-comment -Wno-incompatible-library-redeclaration -Wno-parentheses -Werror
+CCWARN:=-Wno-comment -Wno-incompatible-library-redeclaration -Wno-parentheses -Werror -Wno-empty-body
 CC_WASM:=clang --target=wasm32 -c -O3 -MMD -nostdlib -I$(EGG_SDK)/src -I$(MIDDIR) -Isrc $(CCWARN)
 LD_WASM_EXE:=$(firstword $(shell which wasm-ld) $(shell which wasm-ld-11))
 LD_WASM:=$(LD_WASM_EXE) --no-entry -z stack-size=4194304 --no-gc-sections --allow-undefined --export-table \

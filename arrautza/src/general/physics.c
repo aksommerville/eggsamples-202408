@@ -74,7 +74,7 @@ void physics_rebuild_map() {
 /* Refresh (sprite->aabb). Must do this whenever we change (x,y), and also at the very start.
  */
  
-static void physics_refresh_aabb(struct sprite *sprite) {
+void physics_refresh_aabb(struct sprite *sprite) {
   sprite->aabb.l=sprite->x-sprite->hbl;
   sprite->aabb.t=sprite->y-sprite->hbu;
   sprite->aabb.r=sprite->x+sprite->hbr;

@@ -4,9 +4,45 @@
 
 struct globals g={0};
 
+// Any item that uses the qualifier should be called out here.
+struct item_metadata item_metadata[1+ITEM_COUNT]={
+  // Accept defaults: RAFT,CLOAK,STOPWATCH,HAMMER,COMPASS
+  [ITEM_SWORD]={
+    .qual_display=QUAL_DISPLAY_LEVEL,
+    .qual_init=1,
+    .qual_limit=3,
+  },
+  [ITEM_SHIELD]={
+    .qual_display=QUAL_DISPLAY_LEVEL,
+    .qual_init=1,
+    .qual_limit=3,
+  },
+  [ITEM_BOW]={
+    .qual_display=QUAL_DISPLAY_COUNT,
+    .qual_init=0,
+    .qual_limit=99,
+  },
+  [ITEM_BOMB]={
+    .qual_display=QUAL_DISPLAY_COUNT,
+    .qual_init=0,
+    .qual_limit=99,
+  },
+  [ITEM_GOLD]={
+    .qual_display=QUAL_DISPLAY_COUNT,
+    .qual_init=0,
+    .qual_limit=99,
+  },
+};
+
+/* Quit.
+ **************************************************************************/
+
 void egg_client_quit() {
   inkeep_quit();
 }
+
+/* Input callbacks.
+ ***********************************************************************/
 
 /* Pressing AUX1 (Start) summons the PAUSE menu during play, or dismisses it.
  * If any other menu is active, do nothing.
@@ -38,6 +74,9 @@ static void cb_raw(const union egg_event *event,void *userdata) {
   }
 }
 
+/* Init.
+ *************************************************************************/
+
 int egg_client_init() {
 
   // Our hard-coded SCREENW,SCREENH must match the actual main framebuffer.
@@ -64,7 +103,28 @@ int egg_client_init() {
   sprgrpv_init();
   srand_auto();
   
-  if (0) { // XXX During development I prefer to skip the main menu.
+  /*XXX Start with a bunch of items.
+  g.aitem=ITEM_SWORD;
+  g.bitem=ITEM_CLOAK;
+  g.inventory[0]=ITEM_SHIELD;
+  g.inventory[1]=ITEM_BOMB;
+  g.inventory[2]=ITEM_BOW;
+  g.inventory[3]=ITEM_RAFT;
+  g.inventory[4]=ITEM_STOPWATCH;
+  g.inventory[5]=ITEM_COMPASS;
+  g.inventory[6]=ITEM_HAMMER;
+  g.inventory[7]=ITEM_GOLD;
+  g.itemqual[ITEM_SWORD]=3;
+  g.itemqual[ITEM_SHIELD]=1;
+  g.itemqual[ITEM_BOMB]=11;
+  g.itemqual[ITEM_GOLD]=22;
+  g.itemqual[ITEM_BOW]=0;
+  /**/
+  
+  g.hp=g.hpmax=5;
+  g.hp=3;
+  
+  if (1) { // XXX During development I prefer to skip the main menu.
     load_map(RID_map_start,-1,-1,TRANSITION_NONE);
     check_map_change();
   } else { // Normal startup: Hello menu
@@ -105,6 +165,7 @@ void egg_client_update(double elapsed) {
     sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed,0);
     physics_update(sprgrpv+SPRGRP_SOLID,elapsed);
     check_sprites_footing(sprgrpv+SPRGRP_FOOTING);
+    check_sprites_heronotify(sprgrpv+SPRGRP_HERONOTIFY,sprgrpv+SPRGRP_HERO);
     // Any non-sprite update stuff goes here.
     sprgrp_kill(sprgrpv+SPRGRP_DEATHROW);
     check_map_change();
@@ -213,6 +274,51 @@ static void render_game_transition(int transition,double p) {
   }
 }
 
+// This is externally linked. menu/menu_pause.c borrows it.
+void add_item_tiles(int x,int y,uint8_t itemid) {
+  if ((itemid<1)||(itemid>ITEM_COUNT)) return;
+  const struct item_metadata *metadata=item_metadata+itemid;
+  uint8_t q=g.itemqual[itemid];
+  uint8_t tileid=0x90+itemid-1;
+  if ((q>1)&&(metadata->qual_display==QUAL_DISPLAY_LEVEL)) { // Change tile per qualifier.
+    switch (itemid) {
+      case ITEM_SWORD: switch (q) {
+          case 2: tileid=0xb0; break;
+          case 3: tileid=0xb1; break;
+        } break;
+      case ITEM_SHIELD: switch (q) {
+          case 2: tileid=0xb2; break;
+          case 3: tileid=0xb3; break;
+        } break;
+    }
+  }
+  tile_renderer_tile(&g.tile_renderer,x,y,tileid,0);
+  if (metadata->qual_display==QUAL_DISPLAY_COUNT) {
+    uint8_t bgtileid;
+    if (q>=metadata->qual_limit) bgtileid=0xad; // green at capacity
+    else if (q) bgtileid=0xac; // black if some present
+    else bgtileid=0xab; // red if empty
+    tile_renderer_tile(&g.tile_renderer,x+3,y+6,bgtileid,0);
+    tile_renderer_tile(&g.tile_renderer,x+1,y+6,0xa0+((q/10)%10),0);
+    tile_renderer_tile(&g.tile_renderer,x+5,y+6,0xa0+(q%10),0);
+  }
+}
+
+static void render_overlay() {
+  tile_renderer_begin(&g.tile_renderer,texcache_get(&g.texcache,RID_image_hero),0,0xff);
+
+  add_item_tiles(8,8,g.bitem);
+  add_item_tiles(24,8,g.aitem);
+  
+  int i=0,x=40,y=6;
+  for (;i<g.hpmax;i++,x+=8) {
+    if (i<g.hp) tile_renderer_tile(&g.tile_renderer,x,y,0xaf,0);
+    else tile_renderer_tile(&g.tile_renderer,x,y,0xae,0);
+  }
+    
+  tile_renderer_end(&g.tile_renderer);
+}
+
 void egg_client_render() {
 
   // Search for an opaque menu, determine how many layers we actually need to draw.
@@ -237,7 +343,7 @@ void egg_client_render() {
     } else {
       render_game_untransitioned();
     }
-    //TODO overlay
+    render_overlay();
   }
   
   // Draw all the selected menus in order.

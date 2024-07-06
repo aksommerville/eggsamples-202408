@@ -250,3 +250,71 @@ void check_sprites_footing(struct sprgrp *sprgrp) {
     }
   }
 }
+
+/* Send notifications of hero overlap to observers.
+ */
+ 
+void check_sprites_heronotify(struct sprgrp *observers,struct sprgrp *heroes) {
+  if ((observers->sprc<1)||(heroes->sprc<1)) return;
+  int hi=heroes->sprc;
+  while (hi-->0) physics_refresh_aabb(heroes->sprv[hi]);
+  int oi=observers->sprc;
+  while (oi-->0) {
+    struct sprite *observer=observers->sprv[oi];
+    if (!observer->sprctl||!observer->sprctl->heronotify) continue; // why did you join this group...
+    physics_refresh_aabb(observer);
+    hi=heroes->sprc;
+    while (hi-->0) {
+      struct sprite *hero=heroes->sprv[hi];
+      if (observer->aabb.l>=hero->aabb.r) continue;
+      if (observer->aabb.r<=hero->aabb.l) continue;
+      if (observer->aabb.t>=hero->aabb.b) continue;
+      if (observer->aabb.b<=hero->aabb.t) continue;
+      observer->sprctl->heronotify(observer,hero);
+    }
+  }
+}
+
+/* Test possession of item.
+ * We don't have a straightforward record of this.
+ * Need to examine inventory and assigned items.
+ */
+ 
+int item_possessed(int itemid) {
+  if ((itemid<1)||(itemid>ITEM_COUNT)) return 0;
+  if (itemid==g.aitem) return 1;
+  if (itemid==g.bitem) return 1;
+  int i=INVENTORY_SIZE;
+  const uint8_t *inv=g.inventory;
+  for (;i-->0;inv++) if (*inv==itemid) return 1;
+  return 0;
+}
+
+/* Acquire item.
+ * Store in (aitem) or (bitem) if they're vacant. Otherwise find a vacant slot in (inventory).
+ */
+ 
+void acquire_item(int itemid,int count) {
+  if ((itemid<1)||(itemid>ITEM_COUNT)) return;
+  int invp=-1;
+  if (itemid==g.aitem) invp=1000;
+  else if (itemid==g.bitem) invp=1001;
+  else {
+    int i=INVENTORY_SIZE;
+    const uint8_t *inv=g.inventory+i-1;
+    for (;i-->0;inv--) {
+      if (*inv==itemid) { invp=-1; break; }
+      if (!*inv) invp=i;
+    }
+  }
+  const struct item_metadata *metadata=item_metadata+itemid;
+  if ((metadata->qual_display==QUAL_DISPLAY_COUNT)&&(count>0)) {
+    int nc=(int)(g.itemqual[itemid])+count;
+    if (nc<0) nc=0; else if (nc>metadata->qual_limit) nc=metadata->qual_limit;
+    g.itemqual[itemid]=nc;
+  }
+  if (invp>=1000) ;
+  else if (!g.aitem) g.aitem=itemid;
+  else if (!g.bitem) g.bitem=itemid;
+  else if (invp>=0) g.inventory[invp]=itemid;
+}

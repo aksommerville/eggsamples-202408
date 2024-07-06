@@ -13,3 +13,4 @@
 image image:meadow_int
 song song:secret_stone
 door @9,8 map:2 @4,4 0 0
+sprite @10,4 sprite:chest item:SWORD 0 0 0

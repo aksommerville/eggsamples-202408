@@ -125,3 +125,101 @@ int builder_rid_eval(int tid,const char *src,int srcc) {
   }
   return 0;
 }
+
+/* Item name.
+ */
+ 
+int builder_item_eval(const char *src,int srcc) {
+  if (!src) return -1;
+  if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  char norm[32];
+  if (srcc>(int)sizeof(norm)) return -1;
+  int i=srcc; while (i-->0) {
+    if ((src[i]>='a')&&(src[i]<='z')) norm[i]=src[i]-0x20;
+    else norm[i]=src[i];
+  }
+  #define _(tag) if ((srcc==sizeof(#tag)-1)&&!memcmp(src,norm,srcc)) return ITEM_##tag;
+  ITEM_FOR_EACH
+  #undef _
+  return -1;
+}
+
+/* sprctl
+ * This is a chicken-and-egg situation. Would be great if we could access sprctl.c, but we're the program that generates that.
+ * So we duplicate some of the parsing logic from builder_sprctl.c to predict what IDs will be assigned.
+ * (the assignment logic is dead simple, I promise we'll guess right)
+ */
+ 
+static char **builder_sprctl_name_by_id=0;
+static int builder_sprctl_name_by_idc=0;
+static int builder_sprctl_name_by_ida=0; // zero if not read yet
+
+static int builder_sprctl_parse(const void *src,int srcc) {
+  builder_sprctl_name_by_idc=1;
+  builder_sprctl_name_by_id[0]=strdup("");
+  struct sr_decoder decoder={.v=src,.c=srcc};
+  int lineno=1,linec;
+  const char *line;
+  for (;(linec=sr_decode_line(&line,&decoder))>0;lineno++) {
+    while (linec&&((unsigned char)line[linec-1]<=0x20)) linec--;
+    while (linec&&((unsigned char)line[0]<=0x20)) { line++; linec--; }
+    if (linec<27) continue;
+    if (memcmp(line,"extern const struct sprctl ",27)) continue;
+    int namep=27;
+    while ((namep<linec)&&((unsigned char)line[namep]<=0x20)) namep++;
+    const char *name=line+namep;
+    int namec=0;
+    while (namep+namec<linec) {
+      char ch=name[namec];
+           if ((ch>='a')&&(ch<='z')) ;
+      else if ((ch>='A')&&(ch<='Z')) ;
+      else if ((ch>='0')&&(ch<='9')) ;
+      else if (ch=='_') ;
+      else break;
+      namec++;
+    }
+    if ((namec>=7)&&!memcmp(name,"sprctl_",7)) { name+=7; namec-=7; }
+    if (builder_sprctl_name_by_idc>=builder_sprctl_name_by_ida) {
+      int na=builder_sprctl_name_by_ida+128;
+      if (na>INT_MAX/sizeof(void*)) return -1;
+      void *nv=realloc(builder_sprctl_name_by_id,sizeof(void*)*na);
+      if (!nv) return -1;
+      builder_sprctl_name_by_id=nv;
+      builder_sprctl_name_by_ida=na;
+    }
+    char *nv=malloc(namec+1);
+    if (!nv) return -1;
+    memcpy(nv,name,namec);
+    nv[namec]=0;
+    builder_sprctl_name_by_id[builder_sprctl_name_by_idc++]=nv;
+  }
+  return 0;
+}
+
+static int builder_sprctl_require() {
+  if (builder_sprctl_name_by_ida) return 0;
+  builder_sprctl_name_by_ida=128;
+  if (!(builder_sprctl_name_by_id=malloc(sizeof(void*)*builder_sprctl_name_by_ida))) return -1;
+  void *serial=0;
+  int serialc=file_read(&serial,"src/arrautza.h");
+  if (serialc<0) {
+    fprintf(stderr,"!!! %s:%d:%s: Failed to read 'src/arrautza.h' for sprite controller names.\n",__FILE__,__LINE__,__func__);
+    return -1;
+  }
+  int err=builder_sprctl_parse(serial,serialc);
+  free(serial);
+  return err;
+}
+ 
+int builder_sprctl_eval(const char *src,int srcc) {
+  if (!src) return 0;
+  if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  if (!srcc) return 0;
+  if (builder_sprctl_require()<0) return 0;
+  int id=1; for (;id<builder_sprctl_name_by_idc;id++) {
+    if (memcmp(src,builder_sprctl_name_by_id[id],srcc)) continue;
+    if (builder_sprctl_name_by_id[id][srcc]) continue;
+    return id;
+  }
+  return 0;
+}

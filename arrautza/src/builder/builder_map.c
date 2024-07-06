@@ -78,7 +78,8 @@ static int compile_argument(uint8_t *dst,int dsta,uint8_t opcode,const char *src
     return dstc;
   }
   
-  // "TYPE:NAME" for a resource ID.
+  // "TYPE:NAME" for a resource ID, or "item:NAME" for item ID.
+  // Hopefully nobody creates a resource type called "item".
   int colonp=-1;
   int i=0; for (;i<srcc;i++) {
     if (src[i]==':') {
@@ -91,21 +92,30 @@ static int compile_argument(uint8_t *dst,int dsta,uint8_t opcode,const char *src
     int tnamec=colonp;
     const char *rname=src+colonp+1;
     int rnamec=srcc-colonp-1;
-    int tid=builder_restype_eval(tname,tnamec);
-    if (tid<1) {
-      fprintf(stderr,"Expected resource type, found '%.*s'\n",tnamec,tname);
-      return -2;
+    int tid;
+    if ((tid=builder_restype_eval(tname,tnamec))>0) {
+      int rid=builder_rid_eval(tid,rname,rnamec);
+      if (rid<1) {
+        fprintf(stderr,"Expected resource ID for type '%.*s', found '%.*s'\n",tnamec,tname,rnamec,rname);
+        return -2;
+      }
+      if (dsta>=2) {
+        dst[0]=rid>>8;
+        dst[1]=rid;
+      }
+      return 2;
     }
-    int rid=builder_rid_eval(tid,rname,rnamec);
-    if (rid<1) {
-      fprintf(stderr,"Expected resource ID for type '%.*s', found '%.*s'\n",tnamec,tname,rnamec,rname);
-      return -2;
+    if ((tnamec==4)&&!memcmp(tname,"item",4)) {
+      int itemid=builder_item_eval(rname,rnamec);
+      if (itemid<1) {
+        fprintf(stderr,"Expected item name, found '%.*s'\n",rnamec,rname);
+        return -2;
+      }
+      if (dsta>=1) dst[0]=itemid;
+      return 1;
     }
-    if (dsta>=2) {
-      dst[0]=rid>>8;
-      dst[1]=rid;
-    }
-    return 2;
+    fprintf(stderr,"Expected resource type or 'item', found '%.*s'\n",tnamec,tname);
+    return -2;
   }
   
   // Plenty of other constructions are possible but we don't define any more.

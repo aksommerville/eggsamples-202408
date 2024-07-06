@@ -42,4 +42,12 @@ int builder_restype_eval(const char *src,int srcc);
  */
 int builder_rid_eval(int tid,const char *src,int srcc);
 
+/* 0..255 on success, -1 on error.
+ */
+int builder_item_eval(const char *src,int srcc);
+
+/* 1..65535 on success, 0 on error.
+ */
+int builder_sprctl_eval(const char *src,int srcc);
+
 #endif

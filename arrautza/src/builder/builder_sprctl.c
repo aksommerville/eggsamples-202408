@@ -20,7 +20,8 @@ int builder_compile_sprctl() {
     while (linec&&((unsigned char)line[linec-1]<=0x20)) linec--;
     while (linec&&((unsigned char)line[0]<=0x20)) { line++; linec--; }
     if (!linec) continue;
-    
+
+    // It is important that we assign these sequentially from 1; builder_text.c:builder_sprctl_eval() depends on it.
     if ((linec>=27)&&!memcmp(line,"extern const struct sprctl ",27)) {
       int idp=27;
       while ((idp<linec)&&((unsigned char)line[idp]<=0x20)) idp++;

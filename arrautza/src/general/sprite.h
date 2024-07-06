@@ -64,6 +64,8 @@ void sprite_set_hitbox(struct sprite *sprite,double w,double h,double offx,doubl
  */
 void sprite_warped(struct sprite *sprite);
 
+void physics_refresh_aabb(struct sprite *sprite);
+
 /* sprctl: Static definition of a sprite controller.
  * Any sprite with custom logic must have a sprctl.
  * Decorative sprites, or those controlled by some other controller, might not.
@@ -108,6 +110,11 @@ struct sprctl {
    * We do not report collisions against the map. Examine (phconstrain) if you're interested in those.
    */
   void (*collision)(struct sprite *sprite,struct sprite *other,uint8_t dir);
+  
+  /* Notification of hero overlap.
+   * If you're in SPRGRP_HERONOTIFY, this will be called for each frame that the hero overlaps you, by hitbox.
+   */
+  void (*heronotify)(struct sprite *sprite,struct sprite *hero);
 };
 
 const struct sprctl *sprctl_by_id(int id);
@@ -186,6 +193,7 @@ extern struct sprgrp sprgrpv[32];
 #define SPRGRP_HERO        4 /* Single member. */
 #define SPRGRP_FOOTING     5 /* Receive notifications when I move to a new cell. */
 #define SPRGRP_SOLID       6 /* Automatically prevent collisions against the grid and other solid sprites. */
+#define SPRGRP_HERONOTIFY  7 /* Receive notifications when hero overlaps. Should not be in SOLID. */
 #define SPRGRP_FOR_EACH \
   _(KEEPALIVE) \
   _(DEATHROW) \
@@ -193,7 +201,8 @@ extern struct sprgrp sprgrpv[32];
   _(UPDATE) \
   _(HERO) \
   _(FOOTING) \
-  _(SOLID)
+  _(SOLID) \
+  _(HERONOTIFY)
 
 // Special hooks that only main.c should need.
 void sprgrpv_init();

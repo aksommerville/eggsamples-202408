@@ -1,0 +1,5 @@
+image image:basic_sprites
+tileid 0x01 0
+sprctl sprctl:chest
+layer 100 0
+groups groups:RENDER,HERONOTIFY

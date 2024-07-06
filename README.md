@@ -81,6 +81,10 @@ Expect that cost to scale with the size of the framebuffer.
 - - - [ ] sprctl
 - - - [ ] groups
 - - [ ] Map editor: Click to create POI command.
+- - [ ] Map editor: Can we show a thumbnail for sprite commands instead of the generic monster?
+- - [ ] Map editor: What could we do to provide metadata labels for sprite args, per sprctl?
+- - [ ] Global state store
+- - [ ] Persistence
 - - [ ] Dialogue
 - - [ ] Cutscenes
 - - [ ] Hazards

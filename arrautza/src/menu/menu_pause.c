@@ -9,7 +9,7 @@ struct menu_pause {
   int pvinput;
   int animframe;
   double animclock;
-  int selp;
+  int selp; // (0..ITEM_COUNT-1)=inventory
 };
 
 #define MENU ((struct menu_pause*)menu)
@@ -32,22 +32,37 @@ static void pause_dismiss(struct menu *menu) {
 /* Activate.
  */
  
-static void pause_activate(struct menu *menu) {
+static void pause_select_item(struct menu *menu,int btnid) {
+  if (btnid==INKEEP_BTNID_SOUTH) {
+    uint8_t tmp=g.aitem;
+    g.aitem=g.inventory[MENU->selp];
+    g.inventory[MENU->selp]=tmp;
+  } else if (btnid==INKEEP_BTNID_WEST) {
+    uint8_t tmp=g.bitem;
+    g.bitem=g.inventory[MENU->selp];
+    g.inventory[MENU->selp]=tmp;
+  }
+}
+ 
+static void pause_activate(struct menu *menu,int btnid) {
+  if (MENU->selp<0) ;
+  else if (MENU->selp<ITEM_COUNT) pause_select_item(menu,btnid);
 }
 
 /* Motion.
  */
  
 static void pause_motion(struct menu *menu,int dx,int dy) {
-  if (MENU->selp<0) { // No selection => into items, regardless of input.
+  if (MENU->selp<0) { // No selection => into inventory, regardless of input.
     MENU->selp=0;
-  } else if (MENU->selp<16) { // Items.
+  } else if (MENU->selp<ITEM_COUNT) { // Inventory.
     int col=MENU->selp&3;
     int row=MENU->selp>>2;
     col+=dx; if (col<0) col=3; else if (col>=4) col=0;
     row+=dy; if (row<0) row=3; else if (row>=4) row=0;
     MENU->selp=(row<<2)|col;
   }
+  g.menu_pause_selection=MENU->selp;
 }
 
 /* Update.
@@ -70,10 +85,10 @@ static void _pause_update(struct menu *menu,double elapsed) {
       menu_pop(menu);
     }
   } else {
-    //TODO interactive
     if (g.instate!=MENU->pvinput) {
       #define PRESS(tag) ((g.instate&INKEEP_BTNID_##tag)&&!(MENU->pvinput&INKEEP_BTNID_##tag))
-      if (PRESS(SOUTH)) pause_activate(menu);
+      if (PRESS(SOUTH)) pause_activate(menu,INKEEP_BTNID_SOUTH);
+      if (PRESS(WEST)) pause_activate(menu,INKEEP_BTNID_WEST);
       if (PRESS(AUX1)) pause_dismiss(menu);
       if (PRESS(LEFT)) pause_motion(menu,-1,0);
       if (PRESS(RIGHT)) pause_motion(menu,1,0);
@@ -88,19 +103,8 @@ static void _pause_update(struct menu *menu,double elapsed) {
 /* Render.
  */
  
-static void _pause_render(struct menu *menu) {
-
-  /* Background is a sheet of paper that slides up from the bottom.
-   */
-  int colc=COLC-1;
-  int rowc=ROWC;
-  int x0=TILESIZE;
-  int y0=SCREENH-(rowc-1)*TILESIZE;
-  if (MENU->deployment<1.0) {
-    y0+=(SCREENH-y0)*(1.0-MENU->deployment);
-  }
+static void pause_render_background(struct menu *menu,int x0,int y0,int colc,int rowc,int texid) {
   int x,y,xi,yi;
-  int texid=texcache_get(&g.texcache,RID_image_hero);
   tile_renderer_begin(&g.tile_renderer,texid,0,0xff);
   tile_renderer_tile(&g.tile_renderer,x0,y0,0x82,0);
   tile_renderer_tile(&g.tile_renderer,x0+(colc-1)*TILESIZE,y0,0x82,EGG_XFORM_XREV);
@@ -121,12 +125,29 @@ static void _pause_render(struct menu *menu) {
     }
   }
   tile_renderer_end(&g.tile_renderer);
+}
+
+extern void add_item_tiles(int x,int y,uint8_t itemid);
+
+static void render_selected_item(int x,int y,uint8_t itemid,uint8_t tileid) {
+  tile_renderer_tile(&g.tile_renderer,x,y,tileid,0);
+  tile_renderer_tile(&g.tile_renderer,x+TILESIZE,y,tileid+1,0);
+  tile_renderer_tile(&g.tile_renderer,x,y+TILESIZE,0x8f,EGG_XFORM_YREV);
+  tile_renderer_tile(&g.tile_renderer,x+TILESIZE,y+TILESIZE,0x8f,EGG_XFORM_YREV|EGG_XFORM_XREV);
+  add_item_tiles(x+(TILESIZE>>1),y+(TILESIZE>>1),itemid);
+}
+
+static void pause_render_inventory(struct menu *menu,int x0,int y0,int texid) {
+  int x,y,xi,yi;
+  tile_renderer_begin(&g.tile_renderer,texid,0,0xff);
+  
+  render_selected_item(x0+TILESIZE+(TILESIZE>>1),y0+TILESIZE,g.bitem,0x8b);
+  render_selected_item(x0+TILESIZE*3+(TILESIZE>>1),y0+TILESIZE,g.aitem,0x8d);
   
   /* Background for inventory well.
    */
   int wellw=5,wellh=5;
-  int wellx=x0+TILESIZE,welly=y0+TILESIZE;
-  tile_renderer_begin(&g.tile_renderer,texid,0,0xff);
+  int wellx=x0+TILESIZE,welly=y0+TILESIZE*3;
   tile_renderer_tile(&g.tile_renderer,wellx,welly,0x87,0);
   tile_renderer_tile(&g.tile_renderer,wellx+(wellw-1)*TILESIZE,welly,0x87,EGG_XFORM_XREV);
   tile_renderer_tile(&g.tile_renderer,wellx,welly+(wellh-1)*TILESIZE,0x87,EGG_XFORM_YREV);
@@ -144,17 +165,16 @@ static void _pause_render(struct menu *menu) {
       tile_renderer_tile(&g.tile_renderer,x,y,0x89,0);
     }
   }
-  tile_renderer_end(&g.tile_renderer);
   
-  /* 4x4 inventory well in the upper left.
+  /* Inventory.
    */
   int item_stride=TILESIZE;
-  int itemid=0;
-  tile_renderer_begin(&g.tile_renderer,texid,0,0xff);
+  int invix=0;
   for (y=welly+(TILESIZE>>1),yi=4;yi-->0;y+=item_stride) {
-    for (x=wellx+(TILESIZE>>1),xi=4;xi-->0;x+=item_stride,itemid++) {
-      tile_renderer_tile(&g.tile_renderer,x,y,0x90+itemid,0);
-      if (itemid==MENU->selp) {
+    for (x=wellx+(TILESIZE>>1),xi=4;xi-->0;x+=item_stride,invix++) {
+      uint8_t itemid=g.inventory[invix];
+      add_item_tiles(x,y,itemid);
+      if (invix==MENU->selp) {
         uint8_t xform;
         switch (MENU->animframe) {
           case 0: xform=0; break;
@@ -167,6 +187,26 @@ static void _pause_render(struct menu *menu) {
     }
   }
   tile_renderer_end(&g.tile_renderer);
+}
+
+static void _pause_render(struct menu *menu) {
+
+  /* Declare the overall size and position on screen.
+   * We slide up from the bottom.
+   */
+  int colc=COLC-1;
+  int rowc=ROWC;
+  int x0=TILESIZE;
+  int y0=SCREENH-(rowc-1)*TILESIZE;
+  if (MENU->deployment<1.0) {
+    y0+=(SCREENH-y0)*(1.0-MENU->deployment);
+  }
+  
+  // Most of our graphics come from the hero tilesheet.
+  int texid=texcache_get(&g.texcache,RID_image_hero);
+  
+  pause_render_background(menu,x0,y0,colc,rowc,texid);
+  pause_render_inventory(menu,x0,y0,texid);
 }
 
 /* New.
@@ -184,6 +224,7 @@ struct menu *menu_push_pause() {
   
   MENU->deployment=0.0;
   MENU->deployspeed=PAUSE_DEPLOY_SPEED;
+  MENU->selp=g.menu_pause_selection;
   
   return menu;
 }

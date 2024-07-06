@@ -69,6 +69,19 @@ static int builder_compile_sprite_arg(const char *src,int srcc,int lineno,const 
     return sr_encode_intbe(&builder.dst,grpmask,4);
   }
   
+  /* "sprctl:NAME" => 2-byte sprctl id.
+   */
+  if ((colonp==6)&&!memcmp(src,"sprctl",6)) {
+    const char *name=src+7;
+    int namec=srcc-7;
+    int id=builder_sprctl_eval(name,namec);
+    if (id<1) {
+      fprintf(stderr,"%s:%d: Expected sprite controller name, found '%.*s'\n",builder.srcpath,lineno,namec,name);
+      return -2;
+    }
+    return sr_encode_intbe(&builder.dst,id,2);
+  }
+  
   /* "TYPE:NAME" => 2-byte rid
    * Nothing below this can allow a colon.
    */
@@ -89,7 +102,7 @@ static int builder_compile_sprite_arg(const char *src,int srcc,int lineno,const 
   /* Anything else must be a literal integer.
    * Length is 1 if not specified by a suffix.
    */
-  int len=1,lo,hi,v;
+  int len=1,lo=-128,hi=0xff,v;
        if ((srcc>2)&&!memcmp(src+srcc-2, "u8",2)) { srcc-=2; len=1; lo=-0x80; hi=0xff; }
   else if ((srcc>3)&&!memcmp(src+srcc-3,"u16",3)) { srcc-=3; len=2; lo=-0x8000; hi=0xffff; }
   else if ((srcc>3)&&!memcmp(src+srcc-3,"u24",3)) { srcc-=3; len=3; lo=-0x800000; hi=0xffffff; }

@@ -20,6 +20,7 @@ Must be followed by arguments that produce the expected output length (see "Comm
 - Suffix 'u16', 'u24', or 'u32' for multibyte integers, eg "0x123456u24". Will emit big-endianly.
 - `@X,Y` produces two bytes. (editor will look for these tokens, and assume it's a position in the map).
 - `@X,Y,W,H` produces four bytes.
+- `item:NAME` emits item ID in one byte.
 - `TYPE:NAME` emits a resource's rid in 2 bytes. "TYPE" is only for lookup purposes at edit and build time.
 - Quoted strings emit verbatim bytewise. See `sr_string_eval()`. Quote `"` only.
 
