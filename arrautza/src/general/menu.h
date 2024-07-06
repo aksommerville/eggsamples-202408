@@ -14,9 +14,14 @@
 #define MENU_IV_SIZE 8
 #define MENU_FV_SIZE 8
 
+#define MENU_ID_HELLO 1
+#define MENU_ID_PAUSE 2
+
 struct menu {
 
+  int id; // MENU_ID_*
   int opaque; // If nonzero, main won't bother rendering anything below this.
+  int defunct;
   
   /* Populate these hooks to get callbacks from main.c.
    * During update, the global (g.instate) has the latest input state.
@@ -38,11 +43,16 @@ struct menu *menu_push(int objlen);
 
 /* If (menu) is in the stack, delete and remove it, and return >=0.
  * Pass null to pop whatever's on top.
+ * Prefer the "_soon" version -- it only flags the menu as defunct, and they'll be reaped after the stack drains.
  */
 int menu_pop(struct menu *menu);
+int menu_pop_soon(struct menu *menu);
+
+void reap_defunct_menus();
 
 /* Typed pushers, the normal way to enter a menu.
  */
 struct menu *menu_push_hello();
+struct menu *menu_push_pause();
 
 #endif

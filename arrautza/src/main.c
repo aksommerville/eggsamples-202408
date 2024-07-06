@@ -8,10 +8,25 @@ void egg_client_quit() {
   inkeep_quit();
 }
 
+/* Pressing AUX1 (Start) summons the PAUSE menu during play, or dismisses it.
+ * If any other menu is active, do nothing.
+ * Menus and everyone else still sees activity on AUX1 as usual.
+ */
+static void toggle_pause() {
+  if (!g.menuc) {
+    menu_push_pause();
+  } else if (g.menuv[g.menuc-1]->id==MENU_ID_PAUSE) {
+    // Actually don't pop it from here. The menu likes to animate its dismissal.
+  }
+}
+
 static void cb_joy(int plrid,int btnid,int value,int state,void *userdata) {
   //egg_log("%s %d.0x%04x=%d [0x%04x]",__func__,plrid,btnid,value,state);
   if (!plrid) {
     g.instate=state;
+    switch (btnid) {
+      case INKEEP_BTNID_AUX1: if (value) toggle_pause(); break;
+    }
   }
 }
 
@@ -49,9 +64,14 @@ int egg_client_init() {
   sprgrpv_init();
   srand_auto();
   
-  if (!menu_push_hello()) {
-    egg_log("Failed to initialize main menu!");
-    return -1;
+  if (0) { // XXX During development I prefer to skip the main menu.
+    load_map(RID_map_start,-1,-1,TRANSITION_NONE);
+    check_map_change();
+  } else { // Normal startup: Hello menu
+    if (!menu_push_hello()) {
+      egg_log("Failed to initialize main menu!");
+      return -1;
+    }
   }
   
   return 0;
@@ -72,6 +92,7 @@ void egg_client_update(double elapsed) {
       menu=g.menuv[i];
       if (menu->update_bg) menu->update_bg(menu,elapsed);
     }
+    reap_defunct_menus();
     sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed,1);
   
   // No menu, normal game update.

@@ -28,7 +28,9 @@ static void _hello_del(struct menu *menu) {
  */
  
 static void hello_begin_game(struct menu *menu) {
-  menu_pop(menu);
+  menu_pop_soon(menu);
+  sprgrp_kill(sprgrpv+SPRGRP_HERO);
+  g.mapid=0;
   if ((load_map(RID_map_start,-1,-1,TRANSITION_NONE)<0)||(check_map_change()<0)) {
     egg_log("Failed to load initial map.");
     egg_request_termination();
@@ -143,6 +145,7 @@ struct menu *menu_push_hello() {
   menu->del=_hello_del;
   menu->update=_hello_update;
   menu->render=_hello_render;
+  menu->id=MENU_ID_HELLO;
   menu->opaque=1;
   MENU->pvinput=g.instate;
   

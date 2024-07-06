@@ -45,3 +45,38 @@ int menu_pop(struct menu *menu) {
   menu_del(menu);
   return 0;
 }
+
+/* Mark menu defunct.
+ */
+ 
+int menu_pop_soon(struct menu *menu) {
+  // Confirm it's in the stack, and resolve null to the top of the stack.
+  int p=-1;
+  if (!menu) {
+    if (g.menuc<1) return -1;
+    p=g.menuc-1;
+    menu=g.menuv[p];
+  } else {
+    int i=g.menuc; while (i-->0) {
+      if (g.menuv[i]==menu) {
+        p=i;
+        break;
+      }
+    }
+  }
+  if (p<0) return -1;
+  menu->defunct=1;
+  return 0;
+}
+
+/* Drop any menus marked defunct.
+ */
+ 
+void reap_defunct_menus() {
+  int i=g.menuc;
+  while (i-->0) {
+    struct menu *menu=g.menuv[i];
+    if (!menu->defunct) continue;
+    menu_pop(menu);
+  }
+}
