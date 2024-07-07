@@ -13,6 +13,7 @@ Must be followed by arguments that produce the expected output length (see "Comm
 
 - Plain integer, decimal or "0x" + hexadecimal: One byte.
 - Suffix 'u16', 'u24', or 'u32' for multibyte integers, eg "0x123456u24". Will emit big-endianly.
+- `FLD_*` as defined in arrautza.h => 1 byte.
 - `sprctl:NAME` produces 2-byte sprctl id.
 - `groups:NAME1,NAME2,...` produces a 4-byte group mask.
 - `TYPE:NAME` emits a resource's rid in 2 bytes. "TYPE" is only for lookup purposes at edit and build time.

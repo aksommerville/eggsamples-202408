@@ -8,6 +8,7 @@
 #include "map.h"
 #include "sprite.h"
 #include "menu.h"
+#include "stobus.h"
 
 /* Enumerated cardinal and diagonal directions.
  * These are selected so you can also use for 8-bit neighbor masks.

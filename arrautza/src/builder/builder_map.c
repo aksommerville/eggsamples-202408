@@ -72,10 +72,25 @@ static int compile_argument(uint8_t *dst,int dsta,uint8_t opcode,const char *src
   // Quoted strings.
   if ((srcc>=2)&&(src[0]=='"')&&(src[srcc-1]=='"')) {
     if ((dstc=sr_string_eval((char*)dst,dsta,src,srcc))<0) {
-      fprintf(stderr,"Failed to evaluate string literal.");
+      fprintf(stderr,"Failed to evaluate string literal.\n");
       return -2;
     }
     return dstc;
+  }
+  
+  // "FLD_*" for stobus fields.
+  if ((srcc>=4)&&!memcmp(src,"FLD_",4)) {
+    int id=builder_field_eval(0,src,srcc);
+    if (id<1) {
+      fprintf(stderr,"Unknown field '%.*s'\n",srcc,src);
+      return -2;
+    }
+    if (id>0xff) {
+      fprintf(stderr,"Only fields 1..255 may be referenced here (found %d)\n",id);
+      return -2;
+    }
+    if (dsta>=1) dst[0]=id;
+    return 1;
   }
   
   // "TYPE:NAME" for a resource ID, or "item:NAME" for item ID.

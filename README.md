@@ -83,7 +83,7 @@ Expect that cost to scale with the size of the framebuffer.
 - - [ ] Map editor: Click to create POI command.
 - - [ ] Map editor: Can we show a thumbnail for sprite commands instead of the generic monster?
 - - [ ] Map editor: What could we do to provide metadata labels for sprite args, per sprctl?
-- - [ ] Global state store
+- - [x] Global state store
 - - [ ] Persistence
 - - [ ] Dialogue
 - - [ ] Cutscenes
@@ -92,10 +92,11 @@ Expect that cost to scale with the size of the framebuffer.
 - - - [ ] Sword
 - - - [ ] Bow
 - - - [ ] Shield
-- - [ ] Sprite controllers
+- - [ ] Misc sprite controllers
 - - - [ ] Block that slides to nearest grid cell
 - - - [ ] Treadle
 - - - [ ] Animate forever, animate once
+- - [ ] Monsters
 - - [x] Neighbor transitions
 - - [x] Defer map load
 - - [x] Index doors on map load

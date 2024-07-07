@@ -43,6 +43,7 @@ struct sprite *sprite_new(const struct sprctl *sprctl) {
     (1<<MAP_PHYSICS_WATER)|
     (1<<MAP_PHYSICS_HOLE)|
   0);
+  sprite->layer=100;
   
   if (sprite_add_group(sprite,KEEPALIVE)<0) {
     sprite_del(sprite);
@@ -138,6 +139,36 @@ struct sprite *sprite_spawn(
   }
   if (sprite->sprctl&&sprite->sprctl->ready) {
     if (sprite->sprctl->ready(sprite,argv,argc)<0) {
+      sprite_kill(sprite);
+      sprite_del(sprite);
+      return 0;
+    }
+  }
+  if (sprite->grpc<1) {
+    sprite_del(sprite);
+    return 0;
+  }
+  sprite_del(sprite);
+  return sprite;
+}
+
+/* Spawn sprite without a sprdef.
+ */
+ 
+struct sprite *sprite_spawn_resless(
+  const struct sprctl *sprctl,
+  int imageid,uint8_t tileid,
+  double x,double y,
+  const uint8_t *argv,int argc
+) {
+  struct sprite *sprite=sprite_new(sprctl);
+  if (!sprite) return 0;
+  sprite->x=sprite->pvx=x;
+  sprite->y=sprite->pvy=y;
+  sprite->imageid=imageid;
+  sprite->tileid=tileid;
+  if (sprctl->ready) {
+    if (sprctl->ready(sprite,argv,argc)<0) {
       sprite_kill(sprite);
       sprite_del(sprite);
       return 0;

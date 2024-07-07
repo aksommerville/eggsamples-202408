@@ -74,10 +74,16 @@ static void cb_raw(const union egg_event *event,void *userdata) {
   }
 }
 
+static void cb_state(int id,int v,void *userdata) {//XXX troubleshooting only
+  egg_log("%s:%d:%s: %d=%d",__FILE__,__LINE__,__func__,id,v);
+}
+
 /* Init.
  *************************************************************************/
 
 int egg_client_init() {
+
+  //stobus_listen(&g.stobus,FLD_bombchest1,cb_state,0);//XXX
 
   // Our hard-coded SCREENW,SCREENH must match the actual main framebuffer.
   int screenw=0,screenh=0;
@@ -123,6 +129,7 @@ int egg_client_init() {
   
   g.hp=g.hpmax=5;
   g.hp=3;
+  if (define_stobus_fields()<0) return -1;
   
   if (1) { // XXX During development I prefer to skip the main menu.
     load_map(RID_map_start,-1,-1,TRANSITION_NONE);

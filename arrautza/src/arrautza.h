@@ -77,6 +77,7 @@ extern const struct sprctl sprctl_hero;
 extern const struct sprctl sprctl_animate;
 extern const struct sprctl sprctl_animate_once;
 extern const struct sprctl sprctl_chest;
+extern const struct sprctl sprctl_blinktoast;
 
 #define TRANSITION_NONE        0
 #define TRANSITION_PAN_LEFT    1 /* Pans are named for the direction of the camera's or hero's movement. */
@@ -124,6 +125,13 @@ extern struct item_metadata {
   _(GOLD) \
   _(HAMMER) \
   _(COMPASS)
+
+/* Global state fields.
+ * Our build tool generates a function that defines these in (g.stobus), so you only need to list them here.
+ * Each definition must be followed by a block comment starting with the field's size.
+ */
+#define FLD_bombchest1 1 /* 1 */
+int define_stobus_fields();
   
 extern struct globals {
   
@@ -157,6 +165,7 @@ extern struct globals {
   struct tile_renderer tile_renderer;
   struct texcache texcache;
   
+  struct stobus stobus;
   uint8_t inventory[INVENTORY_SIZE];
   uint8_t aitem,bitem;
   uint8_t itemqual[1+ITEM_COUNT];

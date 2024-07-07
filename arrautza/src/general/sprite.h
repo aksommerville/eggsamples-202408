@@ -53,6 +53,12 @@ struct sprite *sprite_spawn(
   double x,double y,
   const uint8_t *argv,int argc
 );
+struct sprite *sprite_spawn_resless(
+  const struct sprctl *sprctl,
+  int imageid,uint8_t tileid,
+  double x,double y,
+  const uint8_t *argv,int argc
+);
 
 /* Convenience to set (hbl,hbr,hbu,hbd).
  * Centered if (offx,offy) zero.

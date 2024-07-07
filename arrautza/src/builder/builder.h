@@ -50,4 +50,8 @@ int builder_item_eval(const char *src,int srcc);
  */
 int builder_sprctl_eval(const char *src,int srcc);
 
+/* >=0 on success. "FLD_" prefix optional.
+ */
+int builder_field_eval(int *size,const char *src,int srcc);
+
 #endif

@@ -43,6 +43,20 @@ static int builder_compile_sprite_arg(const char *src,int srcc,int lineno,const 
     return sr_encode_raw(&builder.dst,dst,dstc);
   }
   
+  // "FLD_*" for stobus fields.
+  if ((srcc>=4)&&!memcmp(src,"FLD_",4)) {
+    int id=builder_field_eval(0,src,srcc);
+    if (id<1) {
+      fprintf(stderr,"Unknown field '%.*s'\n",srcc,src);
+      return -2;
+    }
+    if (id>0xff) {
+      fprintf(stderr,"Only fields 1..255 may be referenced here (found %d)\n",id);
+      return -2;
+    }
+    return sr_encode_u8(&builder.dst,id);
+  }
+  
   /* "groups:NAME1,NAME2,..." => 4-byte group mask.
    */
   int colonp=-1;

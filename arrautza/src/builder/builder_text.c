@@ -144,82 +144,161 @@ int builder_item_eval(const char *src,int srcc) {
   return -1;
 }
 
-/* sprctl
- * This is a chicken-and-egg situation. Would be great if we could access sprctl.c, but we're the program that generates that.
- * So we duplicate some of the parsing logic from builder_sprctl.c to predict what IDs will be assigned.
- * (the assignment logic is dead simple, I promise we'll guess right)
+/* Content from arrautza.h: sprctl stobus
+ * There are conveniences for accessing these things, but we're the program that generates those conveniences (see builder_sprctl.c).
+ * So we duplicate builder_sprctl.c's logic on the fly for other tooling that needs to access these definitions.
  */
  
-static char **builder_sprctl_name_by_id=0;
-static int builder_sprctl_name_by_idc=0;
-static int builder_sprctl_name_by_ida=0; // zero if not read yet
+#define HDRSYM_TYPE_SPRCTL 1 /* [] */
+#define HDRSYM_TYPE_STOBUS 2 /* [size] */
+ 
+static struct hdrsym {
+  int type;
+  int id;
+  char *name;
+  int namec;
+  int argv[4];
+} *hdrsymv=0;
+static int hdrsymc=0;
+static int hdrsyma=0; // zero if not read yet
 
-static int builder_sprctl_parse(const void *src,int srcc) {
-  builder_sprctl_name_by_idc=1;
-  builder_sprctl_name_by_id[0]=strdup("");
+static struct hdrsym *hdrsymv_append(int type,int id,const char *name,int namec) {
+  if (hdrsymc>=hdrsyma) {
+    int na=hdrsyma+256;
+    if (na>INT_MAX/sizeof(struct hdrsym)) return 0;
+    void *nv=realloc(hdrsymv,sizeof(struct hdrsym)*na);
+    if (!nv) return 0;
+    hdrsymv=nv;
+    hdrsyma=na;
+  }
+  if (!name) namec=0; else if (namec<0) { namec=0; while (name[namec]) namec++; }
+  char *nv=0;
+  if (namec) {
+    if (!(nv=malloc(namec+1))) return 0;
+    memcpy(nv,name,namec);
+    nv[namec]=0;
+  }
+  struct hdrsym *hdrsym=hdrsymv+hdrsymc++;
+  memset(hdrsym,0,sizeof(struct hdrsym));
+  hdrsym->type=type;
+  hdrsym->id=id;
+  hdrsym->name=nv;
+  hdrsym->namec=namec;
+  return hdrsym;
+}
+
+static int hdrsym_parse(const void *src,int srcc) {
   struct sr_decoder decoder={.v=src,.c=srcc};
-  int lineno=1,linec;
+  int lineno=1,linec,sprctlid=1;
   const char *line;
   for (;(linec=sr_decode_line(&line,&decoder))>0;lineno++) {
     while (linec&&((unsigned char)line[linec-1]<=0x20)) linec--;
     while (linec&&((unsigned char)line[0]<=0x20)) { line++; linec--; }
-    if (linec<27) continue;
-    if (memcmp(line,"extern const struct sprctl ",27)) continue;
-    int namep=27;
-    while ((namep<linec)&&((unsigned char)line[namep]<=0x20)) namep++;
-    const char *name=line+namep;
-    int namec=0;
-    while (namep+namec<linec) {
-      char ch=name[namec];
-           if ((ch>='a')&&(ch<='z')) ;
-      else if ((ch>='A')&&(ch<='Z')) ;
-      else if ((ch>='0')&&(ch<='9')) ;
-      else if (ch=='_') ;
-      else break;
-      namec++;
+    
+    if ((linec>=27)&&!memcmp(line,"extern const struct sprctl ",27)) {
+      int namep=27;
+      while ((namep<linec)&&((unsigned char)line[namep]<=0x20)) namep++;
+      const char *name=line+namep;
+      int namec=0;
+      while (namep+namec<linec) {
+        char ch=name[namec];
+             if ((ch>='a')&&(ch<='z')) ;
+        else if ((ch>='A')&&(ch<='Z')) ;
+        else if ((ch>='0')&&(ch<='9')) ;
+        else if (ch=='_') ;
+        else break;
+        namec++;
+      }
+      if ((namec>=7)&&!memcmp(name,"sprctl_",7)) { name+=7; namec-=7; }
+      if (!hdrsymv_append(HDRSYM_TYPE_SPRCTL,sprctlid++,name,namec)) return -1;
+      continue;
     }
-    if ((namec>=7)&&!memcmp(name,"sprctl_",7)) { name+=7; namec-=7; }
-    if (builder_sprctl_name_by_idc>=builder_sprctl_name_by_ida) {
-      int na=builder_sprctl_name_by_ida+128;
-      if (na>INT_MAX/sizeof(void*)) return -1;
-      void *nv=realloc(builder_sprctl_name_by_id,sizeof(void*)*na);
-      if (!nv) return -1;
-      builder_sprctl_name_by_id=nv;
-      builder_sprctl_name_by_ida=na;
+    
+    if ((linec>=12)&&!memcmp(line,"#define FLD_",12)) {
+      int linep=12;
+      const char *name=line+linep;
+      int namec=0;
+      while ((linep<linec)&&((unsigned char)line[linep++]>0x20)) namec++;
+      while ((linep<linec)&&((unsigned char)line[linep]<=0x20)) linep++;
+      const char *idstr=line+linep;
+      int idstrc=0;
+      while ((linep<linec)&&((unsigned char)line[linep++]>0x20)) idstrc++;
+      while ((linep<linec)&&((unsigned char)line[linep]<=0x20)) linep++;
+      if ((linep>linec-2)||memcmp(line+linep,"/*",2)) {
+        fprintf(stderr,"%s:%d: Malformed declaration line for field '%.*s'. Expected ' /* SIZE'\n",builder.srcpath,lineno,namec,name);
+        return -2;
+      }
+      linep+=2;
+      while ((linep<linec)&&((unsigned char)line[linep]<=0x20)) linep++;
+      const char *sizestr=line+linep;
+      int sizestrc=0;
+      while ((linep<linec)&&((unsigned char)line[linep++]>0x20)) sizestrc++;
+      int id,size;
+      if ((sr_int_eval(&id,idstr,idstrc)<2)||(id<1)) {
+        fprintf(stderr,"%s:%d: Invalid id '%.*s' for field '%.*s'\n",builder.srcpath,lineno,idstrc,idstr,namec,name);
+        return -2;
+      }
+      if ((sr_int_eval(&size,sizestr,sizestrc)<2)||(size<0)||(size>31)) {
+        fprintf(stderr,"%s:%d: Invalid size '%.*s' for field '%.*s'\n",builder.srcpath,lineno,sizestrc,sizestr,namec,name);
+        return -2;
+      }
+      struct hdrsym *hdrsym=hdrsymv_append(HDRSYM_TYPE_STOBUS,id,name,namec);
+      if (!hdrsym) return -1;
+      hdrsym->argv[0]=size;
+      continue;
     }
-    char *nv=malloc(namec+1);
-    if (!nv) return -1;
-    memcpy(nv,name,namec);
-    nv[namec]=0;
-    builder_sprctl_name_by_id[builder_sprctl_name_by_idc++]=nv;
   }
   return 0;
 }
 
-static int builder_sprctl_require() {
-  if (builder_sprctl_name_by_ida) return 0;
-  builder_sprctl_name_by_ida=128;
-  if (!(builder_sprctl_name_by_id=malloc(sizeof(void*)*builder_sprctl_name_by_ida))) return -1;
+static int hdrsymv_require() {
+  if (hdrsyma) return 0;
+  hdrsyma=256;
+  if (!(hdrsymv=malloc(sizeof(void*)*hdrsyma))) return -1;
   void *serial=0;
   int serialc=file_read(&serial,"src/arrautza.h");
   if (serialc<0) {
     fprintf(stderr,"!!! %s:%d:%s: Failed to read 'src/arrautza.h' for sprite controller names.\n",__FILE__,__LINE__,__func__);
     return -1;
   }
-  int err=builder_sprctl_parse(serial,serialc);
+  int err=hdrsym_parse(serial,serialc);
   free(serial);
   return err;
 }
- 
-int builder_sprctl_eval(const char *src,int srcc) {
-  if (!src) return 0;
-  if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
-  if (!srcc) return 0;
-  if (builder_sprctl_require()<0) return 0;
-  int id=1; for (;id<builder_sprctl_name_by_idc;id++) {
-    if (memcmp(src,builder_sprctl_name_by_id[id],srcc)) continue;
-    if (builder_sprctl_name_by_id[id][srcc]) continue;
-    return id;
+
+static struct hdrsym *hdrsymv_entry_by_name(int type,const char *src,int srcc) {
+  if (!src) srcc=0; else if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  struct hdrsym *hdrsym=hdrsymv;
+  int i=hdrsymc;
+  for (;i-->0;hdrsym++) {
+    if (hdrsym->type!=type) continue;
+    if (hdrsym->namec!=srcc) continue;
+    if (memcmp(hdrsym->name,src,srcc)) continue;
+    return hdrsym;
   }
   return 0;
+}
+
+static int hdrsymv_id_by_name(int type,const char *src,int srcc) {
+  struct hdrsym *hdrsym=hdrsymv_entry_by_name(type,src,srcc);
+  if (!hdrsym) return 0;
+  return hdrsym->id;
+}
+
+/* Public accessors to arrautza.h symbols: sprctl stobus
+ */
+ 
+int builder_sprctl_eval(const char *src,int srcc) {
+  if (hdrsymv_require()<0) return 0;
+  return hdrsymv_id_by_name(HDRSYM_TYPE_SPRCTL,src,srcc);
+}
+
+int builder_field_eval(int *size,const char *src,int srcc) {
+  if (hdrsymv_require()<0) return 0;
+  if (!src) srcc=0; else if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  if ((srcc>=4)&&!memcmp(src,"FLD_",4)) { src+=4; srcc-=4; }
+  struct hdrsym *hdrsym=hdrsymv_entry_by_name(HDRSYM_TYPE_STOBUS,src,srcc);
+  if (!hdrsym) return 0;
+  if (size) *size=hdrsym->argv[0];
+  return hdrsym->id;
 }

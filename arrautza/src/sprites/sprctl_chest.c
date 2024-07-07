@@ -20,7 +20,8 @@ static int _chest_ready(struct sprite *sprite,const uint8_t *argv,int argc) {
   
   // If flag is declared, that alone drives whether we're full.
   if (SPRITE->flag) {
-    SPRITE->full=1;//TODO Global flags.
+    if (stobus_get(&g.stobus,SPRITE->flag)) SPRITE->full=0;
+    else SPRITE->full=1;
     
   // If itemid is invalid, make us empty.
   } else if ((SPRITE->itemid<1)||(SPRITE->itemid>ITEM_COUNT)) {
@@ -53,10 +54,17 @@ static void _chest_heronotify(struct sprite *sprite,struct sprite *hero) {
   if (!SPRITE->full) return;
   SPRITE->full=0;
   sprite->tileid++;
-  if ((SPRITE->itemid<1)||(SPRITE->itemid>ITEM_COUNT)) return;
-  acquire_item(SPRITE->itemid,SPRITE->count);
-  if (SPRITE->flag) ;//TODO Set global flag
-  //TODO Sound effect and fireworks.
+  if (SPRITE->flag) {
+    stobus_set(&g.stobus,SPRITE->flag,1);
+  }
+  if ((SPRITE->itemid>0)&&(SPRITE->itemid<=ITEM_COUNT)) {
+    acquire_item(SPRITE->itemid,SPRITE->count);
+    //TODO Sound effect.
+    struct sprite *blinktoast=sprite_spawn_resless(&sprctl_blinktoast,RID_image_hero,0x90+SPRITE->itemid-1,sprite->x,sprite->y-0.75,0,0);
+    if (blinktoast) {
+      blinktoast->layer=120;
+    }
+  }
 }
 
 /* Type definition.
