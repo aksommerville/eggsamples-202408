@@ -128,6 +128,7 @@ static void pause_render_background(struct menu *menu,int x0,int y0,int colc,int
 }
 
 extern void add_item_tiles(int x,int y,uint8_t itemid);
+extern void render_compass(int x,int y);
 
 static void render_selected_item(int x,int y,uint8_t itemid,uint8_t tileid) {
   tile_renderer_tile(&g.tile_renderer,x,y,tileid,0);
@@ -143,6 +144,16 @@ static void pause_render_inventory(struct menu *menu,int x0,int y0,int texid) {
   
   render_selected_item(x0+TILESIZE+(TILESIZE>>1),y0+TILESIZE,g.bitem,0x8b);
   render_selected_item(x0+TILESIZE*3+(TILESIZE>>1),y0+TILESIZE,g.aitem,0x8d);
+  if (g.bitem==ITEM_COMPASS) {
+    tile_renderer_end(&g.tile_renderer);
+    render_compass(x0+TILESIZE*2,y0+TILESIZE+(TILESIZE>>1));
+    tile_renderer_begin(&g.tile_renderer,texid,0,0xff);
+  }
+  if (g.aitem==ITEM_COMPASS) {
+    tile_renderer_end(&g.tile_renderer);
+    render_compass(x0+TILESIZE*4,y0+TILESIZE+(TILESIZE>>1));
+    tile_renderer_begin(&g.tile_renderer,texid,0,0xff);
+  }
   
   /* Background for inventory well.
    */
@@ -168,12 +179,17 @@ static void pause_render_inventory(struct menu *menu,int x0,int y0,int texid) {
   
   /* Inventory.
    */
+  int compassx=-1,compassy=-1;
   int item_stride=TILESIZE;
   int invix=0;
   for (y=welly+(TILESIZE>>1),yi=4;yi-->0;y+=item_stride) {
     for (x=wellx+(TILESIZE>>1),xi=4;xi-->0;x+=item_stride,invix++) {
       uint8_t itemid=g.inventory[invix];
       add_item_tiles(x,y,itemid);
+      if (itemid==ITEM_COMPASS) {
+        compassx=x;
+        compassy=y;
+      }
       if (invix==MENU->selp) {
         uint8_t xform;
         switch (MENU->animframe) {
@@ -187,6 +203,7 @@ static void pause_render_inventory(struct menu *menu,int x0,int y0,int texid) {
     }
   }
   tile_renderer_end(&g.tile_renderer);
+  if (compassx>=0) render_compass(compassx,compassy);
 }
 
 static void _pause_render(struct menu *menu) {

@@ -72,14 +72,19 @@ void hero_update(struct sprite *sprite,double elapsed) {
     if (PRESS(RIGHT)) hero_begin_motion(sprite,1,0); else if (RELEASE(RIGHT)&&(SPRITE->indx>0)) hero_end_motion(sprite,1,0);
     if (PRESS(UP)) hero_begin_motion(sprite,0,-1); else if (RELEASE(UP)&&(SPRITE->indy<0)) hero_end_motion(sprite,0,-1);
     if (PRESS(DOWN)) hero_begin_motion(sprite,0,1); else if (RELEASE(DOWN)&&(SPRITE->indy>0)) hero_end_motion(sprite,0,1);
+    if (PRESS(SOUTH)) hero_item_begin(sprite,g.aitem,0); else if (RELEASE(SOUTH)) hero_item_end(sprite,SPRITE->aitem);
+    if (PRESS(WEST)) hero_item_begin(sprite,g.bitem,1); else if (RELEASE(WEST)) hero_item_end(sprite,SPRITE->bitem);
     #undef PRESS
     #undef RELEASE
     SPRITE->pvinput=g.instate;
   }
+  
+  if (SPRITE->aitem) hero_item_update(sprite,SPRITE->aitem,elapsed);
+  if (SPRITE->bitem) hero_item_update(sprite,SPRITE->bitem,elapsed);
 
   if (SPRITE->motion_blackout>0.0) {
     SPRITE->motion_blackout-=elapsed;
-  } else if (SPRITE->indx||SPRITE->indy) {
+  } else if ((SPRITE->indx||SPRITE->indy)&&!hero_walk_inhibited_by_item(sprite)) {
     const double speed=HERO_WALK_SPEED;
     sprite->x+=SPRITE->indx*elapsed*speed;
     sprite->y+=SPRITE->indy*elapsed*speed;

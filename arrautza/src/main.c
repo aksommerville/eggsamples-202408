@@ -139,6 +139,7 @@ int egg_client_init() {
   g.hp=3;
   if (define_stobus_fields()<0) return -1;
   stobus_listen(&g.stobus,FLD_dialogue,cb_dialogue,0);
+  g.ucoordx=g.ucoordy=0;
   
   if (1) { // XXX During development I prefer to skip the main menu.
     load_map(RID_map_start,-1,-1,TRANSITION_NONE);
@@ -158,6 +159,14 @@ int egg_client_init() {
 
 void egg_client_update(double elapsed) {
   inkeep_update(elapsed);
+  
+  // The compass is passive. It gets updated every frame if it might be visible.
+  // ie, it's selected or the pause menu is open.
+  if (
+    (g.aitem==ITEM_COMPASS)||
+    (g.bitem==ITEM_COMPASS)||
+    get_open_menu_by_id(MENU_ID_PAUSE)
+  ) update_compass(elapsed);
   
   // When a menu is open, the one on top is basically the only thing active.
   if (g.menuc) {
@@ -320,11 +329,28 @@ void add_item_tiles(int x,int y,uint8_t itemid) {
   }
 }
 
+void render_compass(int x,int y) {
+  int32_t rotation=(int32_t)(g.compassangle*65536.0);
+  int srcx=0x04*TILESIZE;
+  int srcy=0x0b*TILESIZE;
+  egg_draw_decal_mode7(1,texcache_get(&g.texcache,RID_image_hero),x,y,srcx,srcy,TILESIZE,TILESIZE,rotation,0x00010000,0x00010000);
+}
+
 static void render_overlay() {
   tile_renderer_begin(&g.tile_renderer,texcache_get(&g.texcache,RID_image_hero),0,0xff);
 
   add_item_tiles(8,8,g.bitem);
   add_item_tiles(24,8,g.aitem);
+  if (g.bitem==ITEM_COMPASS) {
+    tile_renderer_end(&g.tile_renderer);
+    render_compass(8,8);
+    tile_renderer_begin(&g.tile_renderer,texcache_get(&g.texcache,RID_image_hero),0,0xff);
+  }
+  if (g.aitem==ITEM_COMPASS) {
+    tile_renderer_end(&g.tile_renderer);
+    render_compass(24,8);
+    tile_renderer_begin(&g.tile_renderer,texcache_get(&g.texcache,RID_image_hero),0,0xff);
+  }
   
   int i=0,x=40,y=6;
   for (;i<g.hpmax;i++,x+=8) {
@@ -336,6 +362,7 @@ static void render_overlay() {
 }
 
 void egg_client_render() {
+  g.renderseq++;
 
   // Search for an opaque menu, determine how many layers we actually need to draw.
   int menup=0;

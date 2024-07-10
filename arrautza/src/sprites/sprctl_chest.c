@@ -60,7 +60,10 @@ static void _chest_heronotify(struct sprite *sprite,struct sprite *hero) {
   if ((SPRITE->itemid>0)&&(SPRITE->itemid<=ITEM_COUNT)) {
     acquire_item(SPRITE->itemid,SPRITE->count);
     //TODO Sound effect.
-    struct sprite *blinktoast=sprite_spawn_resless(&sprctl_blinktoast,RID_image_hero,0x90+SPRITE->itemid-1,sprite->x,sprite->y-0.75,0,0);
+    uint8_t tileid;
+    if (SPRITE->itemid==ITEM_COMPASS) tileid=0xb5; // Compass's natural tile has the hand removed. Use a special one.
+    else tileid=0x90+SPRITE->itemid-1;
+    struct sprite *blinktoast=sprite_spawn_resless(&sprctl_blinktoast,RID_image_hero,tileid,sprite->x,sprite->y-0.75,0,0);
     if (blinktoast) {
       blinktoast->layer=120;
     }

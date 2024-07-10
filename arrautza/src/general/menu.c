@@ -80,3 +80,15 @@ void reap_defunct_menus() {
     menu_pop(menu);
   }
 }
+
+/* If a menu of the given ID is open, return it.
+ */
+ 
+struct menu *get_open_menu_by_id(int id) {
+  int i=g.menuc;
+  while (i-->0) {
+    struct menu *menu=g.menuv[i];
+    if (menu->id==id) return menu;
+  }
+  return 0;
+}

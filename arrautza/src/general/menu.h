@@ -51,6 +51,8 @@ int menu_pop_soon(struct menu *menu);
 
 void reap_defunct_menus();
 
+struct menu *get_open_menu_by_id(int id);
+
 /* Typed pushers, the normal way to enter a menu.
  */
 struct menu *menu_push_hello();

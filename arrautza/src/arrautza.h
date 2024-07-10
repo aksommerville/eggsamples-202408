@@ -37,6 +37,7 @@
 #define MAPCMD_neighbore 0x24 /* u16:mapid */
 #define MAPCMD_neighborn 0x25 /* u16:mapid */
 #define MAPCMD_neighbors 0x26 /* u16:mapid */
+#define MAPCMD_ucoord 0x40 /* u16:x u16:y */
 #define MAPCMD_door 0x80 /* u16:pt u16:mapid u16:dstpt u8:reserved1 u8:reserved2 */
 #define MAPCMD_sprite 0x81 /* u16:pt u16:spriteid u8:a u8:b u8:c u8:d */
 #define MAPCMD_FOR_EACH \
@@ -47,6 +48,7 @@
   _(neighbore) \
   _(neighborn) \
   _(neighbors) \
+  _(ucoord) \
   _(door) \
   _(sprite)
 
@@ -153,6 +155,7 @@ extern struct globals {
   } mapnext;
   struct map map;
   uint8_t poibits[(COLC*ROWC+7)>>3]; // LRTB cell index big-endianly. Nonzero if something exists at that cell.
+  int16_t ucoordx,ucoordy; // Universal world coordinates of the map.
   
   int instate;
   int menu_pause_selection; // Persists even when the menu doesn't exist.
@@ -165,6 +168,7 @@ extern struct globals {
   uint32_t transrgba; // For FADE_BLACK and SPOTLIGHT. Alpha must be opaque.
   int renderx,rendery; // Where to put the new frame. Relevant for PAN transitions.
   int texid_spotlight;
+  int renderseq;
   
   struct menu *menuv[MENU_LIMIT];
   int menuc;
@@ -178,6 +182,7 @@ extern struct globals {
   uint8_t aitem,bitem;
   uint8_t itemqual[1+ITEM_COUNT];
   uint8_t hp,hpmax;
+  double compassangle;
 } g;
 
 /* These do not load the map immediately.
@@ -198,5 +203,7 @@ void check_sprites_heronotify(struct sprgrp *observers,struct sprgrp *heroes);
 int item_possessed(int itemid);
 
 void acquire_item(int itemid,int count);
+
+void update_compass(double elapsed);
   
 #endif

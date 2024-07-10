@@ -47,6 +47,7 @@ static int load_map_cb(const uint8_t *cmd,int cmdc,void *userdata) {
     case MAPCMD_song: egg_audio_play_song(0,(cmd[1]<<8)|cmd[2],0,1); break;
     case MAPCMD_image: return load_map_image((cmd[1]<<8)|cmd[2]);
     case MAPCMD_sprite: return load_map_sprite(cmd);
+    case MAPCMD_ucoord: g.ucoordx=(cmd[1]<<8)|cmd[2]; g.ucoordy=(cmd[3]<<8)|cmd[4]; break;
     
     // All commands that begin with a position and need recorded in poibits.
     // We're just marking the cell as "interesting", so when the hero steps here
@@ -172,6 +173,8 @@ static int apply_map_change(uint16_t mapid,int dstx,int dsty,int transition) {
   }
   sprite_warped(hero);
   
+  //egg_log("loaded map %d, ucoord=%d,%d",g.mapid,g.ucoordx,g.ucoordy);
+  
   return 0;
 }
 
@@ -203,10 +206,10 @@ int load_neighbor(uint8_t mapcmd) {
   if (mapid<1) return -1;
   int transition=TRANSITION_NONE;
   switch (mapcmd) {
-    case MAPCMD_neighborw: transition=TRANSITION_PAN_LEFT; break;
-    case MAPCMD_neighbore: transition=TRANSITION_PAN_RIGHT; break;
-    case MAPCMD_neighborn: transition=TRANSITION_PAN_UP; break;
-    case MAPCMD_neighbors: transition=TRANSITION_PAN_DOWN; break;
+    case MAPCMD_neighborw: g.ucoordx--; transition=TRANSITION_PAN_LEFT; break;
+    case MAPCMD_neighbore: g.ucoordx++; transition=TRANSITION_PAN_RIGHT; break;
+    case MAPCMD_neighborn: g.ucoordy--; transition=TRANSITION_PAN_UP; break;
+    case MAPCMD_neighbors: g.ucoordy++; transition=TRANSITION_PAN_DOWN; break;
   }
   return load_map(mapid,-1,-1,transition);
 }
@@ -317,4 +320,69 @@ void acquire_item(int itemid,int count) {
   else if (!g.aitem) g.aitem=itemid;
   else if (!g.bitem) g.bitem=itemid;
   else if (invp>=0) g.inventory[invp]=itemid;
+}
+
+/* Update the compass's rotation.
+ */
+
+void update_compass(double elapsed) {
+  /* Constants, highly tweakable.
+   * (rate_near) is how fast we spin when you're right on the target, in radians/sec.
+   * (rate_far) is when we're out of range. All other speeds are calculated as a proportion of this.
+   * (distance_far) is the distance in meters where we stop providing information at all.
+   * Mind that as you approach (distance_far), the output is increasingly difficult for a human to grok.
+   */
+  const double rate_near=15.0;
+  const double rate_far=10.0;
+  const double distance_far=COLC*8.0;
+
+  // TODO Determine compass target location.
+  int16_t tucx=2,tucy=-2;
+  uint8_t tcol=11,trow=7;
+  double hx,hy;
+  if (sprgrpv[SPRGRP_HERO].sprc>=1) {
+    struct sprite *hero=sprgrpv[SPRGRP_HERO].sprv[0];
+    hx=hero->x;
+    hy=hero->y;
+  } else {
+    hx=COLC*0.5;
+    hy=ROWC*0.5;
+  }
+  double dx=(tucx-g.ucoordx)*COLC+tcol+0.5-hx;
+  double dy=(tucy-g.ucoordy)*ROWC+trow+0.5-hy;
+  
+  // Within half a tile of the target, we rotate at a fixed fast rate (rate_near).
+  if ((dx>-0.10)&&(dx<0.10)&&(dy>-0.10)&&(dy<0.10)) {
+    g.compassangle+=rate_near*elapsed;
+    if (g.compassangle>M_PI) g.compassangle-=M_PI*2.0;
+    return;
+  }
+  double distance=sqrt(dx*dx+dy*dy);
+  if (distance<=0.5) {
+    g.compassangle+=rate_near*elapsed;
+    if (g.compassangle>M_PI) g.compassangle-=M_PI*2.0;
+    return;
+  }
+  
+  // If distance is beyond the "far" threshold, we don't care where the target is.
+  if (distance>distance_far) {
+    g.compassangle+=rate_far*elapsed;
+    if (g.compassangle>M_PI) g.compassangle-=M_PI*2.0;
+    return;
+  }
+  
+  // Determine the target angle and our current distance from that.
+  double t=atan2(dx,-dy);
+  double tdistance=t-g.compassangle;
+  while (tdistance<0.0) tdistance+=M_PI*2.0;
+  while (tdistance>M_PI*2.0) tdistance-=M_PI*2.0;
+  if (tdistance>=M_PI) tdistance=M_PI*2.0-tdistance;
+  tdistance/=M_PI;
+  
+  // Rotation speed will scale between two values, with the lower velocity decreasing with distance.
+  // Top speed is constant (rate_far).
+  double rate_low=(rate_far*distance)/distance_far;
+  double rate=rate_low+(rate_far-rate_low)*tdistance;
+  g.compassangle+=rate*elapsed;
+  if (g.compassangle>M_PI) g.compassangle-=M_PI*2.0;
 }

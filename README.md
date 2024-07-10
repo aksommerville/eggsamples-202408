@@ -87,7 +87,7 @@ Expect that cost to scale with the size of the framebuffer.
 - - [ ] Tilesheet editor: Shift-drag writing over transparent cells does not erase them
 - - [x] Global state store
 - - [ ] Persistence
-- - [ ] Dialogue
+- - [x] Dialogue
 - - [ ] Cutscenes
 - - [ ] Hazards
 - - [ ] Combat

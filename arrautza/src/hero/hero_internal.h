@@ -19,6 +19,11 @@ struct sprite_hero {
   struct sprite *pushsprite; // WEAK, for identification only. DO NOT DEREFERENCE.
   double pushsprite_time; // How long has (pushsprite) been colliding?
   int pushsprite_again; // Set by hero_collision() if (pushsprite) is still in a state of collision.
+  uint8_t aitem,bitem; // Nonzero only if an action is in progress.
+  double swordtime;
+  int sword_drop_pending;
+  double shieldtime;
+  int shield_drop_pending;
 };
 
 #define SPRITE ((struct sprite_hero*)sprite)
@@ -33,5 +38,12 @@ void hero_update(struct sprite *sprite,double elapsed);
 // hero_event.c
 void hero_footing(struct sprite *sprite,int8_t pvcol,int8_t pvrow);
 void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir,int physics);
+
+// hero_item.c
+void hero_item_begin(struct sprite *sprite,uint8_t itemid,int slot); // slot is (0,1)=(a,b)
+void hero_item_end(struct sprite *sprite,uint8_t itemid);
+void hero_item_update(struct sprite *sprite,uint8_t itemid,double elapsed);
+int hero_item_in_use(struct sprite *sprite,uint8_t itemid);
+int hero_walk_inhibited_by_item(struct sprite *sprite);
 
 #endif
