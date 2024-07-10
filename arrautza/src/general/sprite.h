@@ -210,6 +210,10 @@ extern struct sprgrp sprgrpv[32];
   _(FOOTING) \
   _(SOLID) \
   _(HERONOTIFY)
+  
+static inline struct sprite *sprite_if_alive(struct sprite *sprite) {
+  return sprgrp_has(sprgrpv+SPRGRP_KEEPALIVE,sprite)?sprite:0;
+}
 
 // Special hooks that only main.c should need.
 void sprgrpv_init();
@@ -221,5 +225,12 @@ void sprgrp_render(int dsttexid,struct sprgrp *sprgrp);
  */
 void physics_update(struct sprgrp *sprgrp,double elapsed);
 void physics_rebuild_map();
+
+/* Public API for specific sprite types.
+ * These must check type at entry of each function.
+ ******************************************************************************/
+
+// (activator) may be null. If not (dir) should be which face of (activator).
+int sprite_pushtrigger_activate(struct sprite *sprite,struct sprite *activator,uint8_t dir);
 
 #endif

@@ -5,6 +5,7 @@
 
 #define HERO_WALK_ANIM_TIME 0.150 /* s/frame */
 #define HERO_WALK_SPEED 5.0 /* m/s */
+#define HERO_PUSH_ACTIVATION_TIME 0.200
 
 struct sprite_hero {
   struct sprite hdr;
@@ -15,6 +16,9 @@ struct sprite_hero {
   int animframe;
   int pushing; // Clear on update, then it gets set during physics resolution.
   double motion_blackout; // Motion is suppressed until this counts down.
+  struct sprite *pushsprite; // WEAK, for identification only. DO NOT DEREFERENCE.
+  double pushsprite_time; // How long has (pushsprite) been colliding?
+  int pushsprite_again; // Set by hero_collision() if (pushsprite) is still in a state of collision.
 };
 
 #define SPRITE ((struct sprite_hero*)sprite)

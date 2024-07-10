@@ -48,6 +48,23 @@ static void hero_end_motion(struct sprite *sprite,int dx,int dy) {
  */
  
 void hero_update(struct sprite *sprite,double elapsed) {
+
+  if (SPRITE->pushsprite&&!SPRITE->pushsprite_again) {
+    SPRITE->pushsprite=0;
+  } else if (SPRITE->pushsprite) {
+    SPRITE->pushsprite_time+=elapsed;
+    if (SPRITE->pushsprite_time>=HERO_PUSH_ACTIVATION_TIME) {
+      SPRITE->pushsprite_time-=HERO_PUSH_ACTIVATION_TIME;
+      if (sprite_pushtrigger_activate(sprite_if_alive(SPRITE->pushsprite),sprite,SPRITE->facedir)) {
+        SPRITE->indx=0;
+        SPRITE->indy=0;
+        SPRITE->animframe=0;
+        SPRITE->pushing=0;
+      }
+    }
+  }
+  SPRITE->pushsprite_again=0;
+
   if (g.instate!=SPRITE->pvinput) {
     #define PRESS(tag) ((g.instate&INKEEP_BTNID_##tag)&&!(SPRITE->pvinput&INKEEP_BTNID_##tag))
     #define RELEASE(tag) (!(g.instate&INKEEP_BTNID_##tag)&&(SPRITE->pvinput&INKEEP_BTNID_##tag))
@@ -59,6 +76,7 @@ void hero_update(struct sprite *sprite,double elapsed) {
     #undef RELEASE
     SPRITE->pvinput=g.instate;
   }
+
   if (SPRITE->motion_blackout>0.0) {
     SPRITE->motion_blackout-=elapsed;
   } else if (SPRITE->indx||SPRITE->indy) {
@@ -74,5 +92,6 @@ void hero_update(struct sprite *sprite,double elapsed) {
   } else {
     SPRITE->animframe=1;
   }
+
   SPRITE->pushing=0; // until physics tells us otherwise, each frame.
 }

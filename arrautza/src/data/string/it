@@ -1,6 +1,7 @@
 1 Italiano
 
-hello_newgame   (New Game)
-hello_continue  (Continue)
-hello_quit      (Quit)
+hello_newgame (New Game)
+hello_continue (Continue)
+hello_quit (Quit)
 hello_fineprint Pretend the labels are in Italian.
+dlg_start_sign The sign is in Italian, you can't understand it.

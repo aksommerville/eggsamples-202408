@@ -7,6 +7,7 @@
 #include "util/tile_renderer.h"
 #include "util/texcache.h"
 #include "util/text.h"
+#include "util/font.h"
 #include "resid.h"
 
 /* These must remain in sync:
@@ -59,6 +60,7 @@
 #define SPRITECMD_layer     0x24 /* s8:layer u8:unused */
 #define SPRITECMD_invmass   0x25 /* u8:invmass u8:unused */
 #define SPRITECMD_groups    0x40 /* u32:grpmask */
+#define SPRITECMD_mapsolids 0x41 /* u32:physics */
 #define SPRITECMD_FOR_EACH \
   _(image) \
   _(tileid) \
@@ -66,7 +68,8 @@
   _(sprctl) \
   _(layer) \
   _(invmass) \
-  _(groups)
+  _(groups) \
+  _(mapsolids)
 
 #include "general/general.h"
 
@@ -78,6 +81,7 @@ extern const struct sprctl sprctl_animate;
 extern const struct sprctl sprctl_animate_once;
 extern const struct sprctl sprctl_chest;
 extern const struct sprctl sprctl_blinktoast;
+extern const struct sprctl sprctl_pushtrigger;
 
 #define TRANSITION_NONE        0
 #define TRANSITION_PAN_LEFT    1 /* Pans are named for the direction of the camera's or hero's movement. */
@@ -133,6 +137,7 @@ extern struct item_metadata {
 #define FLD_bombchest1 1 /* 1 */
 #define FLD_cavegold1 2 /* 1 */
 #define FLD_bow 3 /* 1 */
+#define FLD_dialogue 4 /* 0 ; value is a string id */
 int define_stobus_fields();
   
 extern struct globals {
@@ -166,6 +171,7 @@ extern struct globals {
   
   struct tile_renderer tile_renderer;
   struct texcache texcache;
+  struct font *font;
   
   struct stobus stobus;
   uint8_t inventory[INVENTORY_SIZE];

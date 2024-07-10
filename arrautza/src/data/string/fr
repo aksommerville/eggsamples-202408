@@ -1,6 +1,7 @@
 1 francais
 
-hello_newgame   Nouveau Jeu
-hello_continue  Continuer
-hello_quit      Quitter
+hello_newgame Nouveau Jeu
+hello_continue Continuer
+hello_quit Quitter
 hello_fineprint (c) 2024 AK Sommerville
+dlg_start_sign Bonjour, je suis un placard.

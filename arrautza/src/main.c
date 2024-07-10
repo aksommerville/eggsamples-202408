@@ -78,6 +78,10 @@ static void cb_state(int id,int v,void *userdata) {//XXX troubleshooting only
   egg_log("%s:%d:%s: %d=%d",__FILE__,__LINE__,__func__,id,v);
 }
 
+static void cb_dialogue(int k,int v,void *userdata) {
+  menu_push_dialogue(v);
+}
+
 /* Init.
  *************************************************************************/
 
@@ -105,6 +109,10 @@ int egg_client_init() {
   if (egg_texture_upload(g.texid_transtex=egg_texture_new(),SCREENW,SCREENH,SCREENW<<2,EGG_TEX_FMT_RGBA,0,0)<0) return -1;
   if (egg_texture_load_image(g.texid_spotlight=egg_texture_new(),0,RID_image_spotlight)<0) return -1;
   if (egg_texture_load_image(g.texid_font_tiles=egg_texture_new(),0,RID_image_font_tiles)<0) return -1;
+  if (!(g.font=font_new(9))) return -1;
+  font_add_page(g.font,RID_image_font_9h_21,0x0021);
+  font_add_page(g.font,RID_image_font_9h_a1,0x00a1);
+  font_add_page(g.font,RID_image_font_9h_400,0x0400);
   
   sprgrpv_init();
   srand_auto();
@@ -130,6 +138,7 @@ int egg_client_init() {
   g.hp=g.hpmax=5;
   g.hp=3;
   if (define_stobus_fields()<0) return -1;
+  stobus_listen(&g.stobus,FLD_dialogue,cb_dialogue,0);
   
   if (1) { // XXX During development I prefer to skip the main menu.
     load_map(RID_map_start,-1,-1,TRANSITION_NONE);

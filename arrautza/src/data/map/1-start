@@ -22,3 +22,4 @@ sprite @14,5 sprite:block 0 0 0 0
 sprite @4,7 sprite:block 0 0 0 0
 sprite @8,3 sprite:block 0 0 0 0
 sprite @10,3 sprite:chest item:SWORD 0 0 0
+sprite @7,5 sprite:pushtrigger FLD_dialogue string:dlg_start_sign 0

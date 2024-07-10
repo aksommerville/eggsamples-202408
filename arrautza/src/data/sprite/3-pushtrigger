@@ -1,0 +1,3 @@
+sprctl sprctl:pushtrigger
+invmass 0 0
+groups groups:SOLID

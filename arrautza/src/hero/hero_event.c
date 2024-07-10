@@ -45,6 +45,13 @@ void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir,int p
   if (dir==SPRITE->facedir) {
     if (other) { // It's a sprite, so always enter the "push" face.
       SPRITE->pushing=1;
+      if (other==SPRITE->pushsprite) {
+        SPRITE->pushsprite_again=1;
+      } else if (!SPRITE->pushsprite) {
+        SPRITE->pushsprite=other;
+        SPRITE->pushsprite_time=0;
+        SPRITE->pushsprite_again=1;
+      }
     } else if (physics&(1<<1)) { // A WALL tile is involved, so do "push".
       SPRITE->pushing=1;
     } else {

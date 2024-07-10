@@ -16,6 +16,7 @@
 
 #define MENU_ID_HELLO 1
 #define MENU_ID_PAUSE 2
+#define MENU_ID_DIALOGUE 3
 
 struct menu {
 
@@ -54,5 +55,6 @@ void reap_defunct_menus();
  */
 struct menu *menu_push_hello();
 struct menu *menu_push_pause();
+struct menu *menu_push_dialogue(int stringid);
 
 #endif
