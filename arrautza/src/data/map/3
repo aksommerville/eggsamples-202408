@@ -13,3 +13,4 @@
 image image:meadow
 neighborn map:2
 neighborw map:4
+sprite @11,5 sprite:chest item:CLOAK 0 0 0

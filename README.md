@@ -83,6 +83,8 @@ Expect that cost to scale with the size of the framebuffer.
 - - [ ] Map editor: Click to create POI command.
 - - [ ] Map editor: Can we show a thumbnail for sprite commands instead of the generic monster?
 - - [ ] Map editor: What could we do to provide metadata labels for sprite args, per sprctl?
+- - [ ] Map editor: Observed a neighbor failing to get created (11=>12 but i forget the circumstances).
+- - [ ] Tilesheet editor: Shift-drag writing over transparent cells does not erase them
 - - [x] Global state store
 - - [ ] Persistence
 - - [ ] Dialogue

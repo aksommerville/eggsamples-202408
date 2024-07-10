@@ -15,6 +15,7 @@ static int physics_wallc=0;
 static struct collision {
   struct sprite *a,*b;
   uint8_t dir; // DIR_N,W,E,W, which edge of (a) is colliding
+  int physics; // Multiple 1<<tilesheet.physics, if (b) null
 } physics_collisionv[COLLISION_LIMIT];
 static int physics_collisionc=0;
  
@@ -84,12 +85,13 @@ void physics_refresh_aabb(struct sprite *sprite) {
 /* Record a collision if there's room for it.
  */
  
-static void physics_add_collision(struct sprite *a,struct sprite *b,uint8_t dir) {
+static void physics_add_collision(struct sprite *a,struct sprite *b,uint8_t dir,int physics) {
   if (physics_collisionc>=COLLISION_LIMIT) return;
   struct collision *collision=physics_collisionv+physics_collisionc++;
   collision->a=a;
   collision->b=b;
   collision->dir=dir;
+  collision->physics=physics;
 }
 
 /* Resolve any collisions against static bodies and reset all (phconstrain).
@@ -112,7 +114,7 @@ static void physics_resolve_static(struct sprgrp *sprgrp) {
     // Sprites should generally be smaller than cells, so there shouldn't be more than 4 walls.
     // But allow more just in case.
     struct aabb wallv[16];
-    int wallc=0;
+    int wallc=0,physics=0;
     const struct wall *wall=physics_wallv;
     int wi=physics_wallc;
     for (;wi-->0;wall++) {
@@ -128,6 +130,7 @@ static void physics_resolve_static(struct sprgrp *sprgrp) {
       if (wall->aabb.t==sprite->aabb.b) { sprite->phconstrain|=DIR_S; continue; }
       if (wall->aabb.b==sprite->aabb.t) { sprite->phconstrain|=DIR_N; continue; }
       // OK, actually touching.
+      physics|=wall->physics;
       wallv[wallc++]=wall->aabb;
       if (wallc>=16) break;
     }
@@ -142,19 +145,19 @@ static void physics_resolve_static(struct sprgrp *sprgrp) {
       if ((escl<=esct)&&(escl<=escr)&&(escl<=escb)) {
         sprite->x=wallv[0].l-sprite->hbr;
         sprite->phconstrain|=DIR_E;
-        physics_add_collision(sprite,0,DIR_E);
+        physics_add_collision(sprite,0,DIR_E,physics);
       } else if ((esct<=escr)&&(esct<=escb)) {
         sprite->y=wallv[0].t-sprite->hbd;
         sprite->phconstrain|=DIR_S;
-        physics_add_collision(sprite,0,DIR_S);
+        physics_add_collision(sprite,0,DIR_S,physics);
       } else if (escr<=escb) {
         sprite->x=wallv[0].r+sprite->hbl;
         sprite->phconstrain|=DIR_W;
-        physics_add_collision(sprite,0,DIR_W);
+        physics_add_collision(sprite,0,DIR_W,physics);
       } else {
         sprite->y=wallv[0].b+sprite->hbu;
         sprite->phconstrain|=DIR_N;
-        physics_add_collision(sprite,0,DIR_N);
+        physics_add_collision(sprite,0,DIR_N,physics);
       }
       physics_refresh_aabb(sprite);
     } else {
@@ -183,7 +186,7 @@ static void physics_resolve_static(struct sprgrp *sprgrp) {
         sprite->y+=dy*mag;
         sprite->phconstrain|=constrain;
         physics_refresh_aabb(sprite);
-        physics_add_collision(sprite,0,constrain);
+        physics_add_collision(sprite,0,constrain,physics);
       } else {
         // This case usually arises when you walk into a concave corner.
         // I don't know how to solve it.
@@ -196,19 +199,19 @@ static void physics_resolve_static(struct sprgrp *sprgrp) {
         if ((escl<=esct)&&(escl<=escr)&&(escl<=escb)) {
           sprite->x=wallv[0].l-sprite->hbr;
           sprite->phconstrain|=DIR_E;
-          physics_add_collision(sprite,0,DIR_E);
+          physics_add_collision(sprite,0,DIR_E,physics);
         } else if ((esct<=escr)&&(esct<=escb)) {
           sprite->y=wallv[0].t-sprite->hbd;
           sprite->phconstrain|=DIR_S;
-          physics_add_collision(sprite,0,DIR_S);
+          physics_add_collision(sprite,0,DIR_S,physics);
         } else if (escr<=escb) {
           sprite->x=wallv[0].r+sprite->hbl;
           sprite->phconstrain|=DIR_W;
-          physics_add_collision(sprite,0,DIR_W);
+          physics_add_collision(sprite,0,DIR_W,physics);
         } else {
           sprite->y=wallv[0].b+sprite->hbu;
           sprite->phconstrain|=DIR_N;
-          physics_add_collision(sprite,0,DIR_N);
+          physics_add_collision(sprite,0,DIR_N,physics);
         }
         physics_refresh_aabb(sprite);
         goto _start_over_;
@@ -259,7 +262,7 @@ static void physics_resolve_sprites(struct sprgrp *sprgrp) {
       /* Record the collision for reporting later.
        * Note that (abit,bbit) are the direction of travel, and we're recording (a)'s direction of impact -- use (bbit).
        */
-      physics_add_collision(a,b,bbit);
+      physics_add_collision(a,b,bbit,0);
       
       /* If either sprite is constrained, have the other do the full escape.
        * Otherwise, allocate proportionately to inverse mass.
@@ -307,10 +310,10 @@ static void physics_finalize(struct sprgrp *sprgrp) {
   struct collision *coll=physics_collisionv;
   for (i=physics_collisionc;i-->0;coll++) {
     if (coll->a->sprctl&&coll->a->sprctl->collision) {
-      coll->a->sprctl->collision(coll->a,coll->b,coll->dir);
+      coll->a->sprctl->collision(coll->a,coll->b,coll->dir,coll->physics);
     }
     if (coll->b&&coll->b->sprctl&&coll->b->sprctl->collision) {
-      coll->b->sprctl->collision(coll->b,coll->a,dir_reverse(coll->dir));
+      coll->b->sprctl->collision(coll->b,coll->a,dir_reverse(coll->dir),0);
     }
   }
 }

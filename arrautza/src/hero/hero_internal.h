@@ -28,6 +28,6 @@ void hero_update(struct sprite *sprite,double elapsed);
 
 // hero_event.c
 void hero_footing(struct sprite *sprite,int8_t pvcol,int8_t pvrow);
-void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir);
+void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir,int physics);
 
 #endif

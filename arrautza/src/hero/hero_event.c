@@ -41,10 +41,14 @@ void hero_footing(struct sprite *sprite,int8_t pvcol,int8_t pvrow) {
 /* Collision.
  */
  
-void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir) {
-  //egg_log("%s %p 0x%x %s",__func__,other,dir,other?"nonzero":"zero");
+void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir,int physics) {
   if (dir==SPRITE->facedir) {
-    //TODO Pushing against static walls is good, but do check map physics and don't enter (pushing) if it's HOLE or WATER.
-    SPRITE->pushing=1;
+    if (other) { // It's a sprite, so always enter the "push" face.
+      SPRITE->pushing=1;
+    } else if (physics&(1<<1)) { // A WALL tile is involved, so do "push".
+      SPRITE->pushing=1;
+    } else {
+      // Pressing something else, eg water. Don't push.
+    }
   }
 }

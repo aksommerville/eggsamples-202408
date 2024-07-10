@@ -74,7 +74,7 @@ export class MapPainter {
         if (x < 0) x = 0;
         else if (x >= this.mapBus.loc.map.w) x = this.mapBus.loc.map.w - 1;
         const tileid = cellv[y * this.mapBus.loc.map.w + x];
-        if (this.mapBus.tstables.family[tileid] === family) {
+        if (this.mapBus.tstables.family?.[tileid] === family) {
           mask |= bit;
         }
         bit >>= 1;
@@ -87,7 +87,7 @@ export class MapPainter {
     if ((x < 0) || (x >= this.mapBus.loc.map.w)) return false;
     if ((y < 0) || (y >= this.mapBus.loc.map.h)) return false;
     const tileid0 = this.mapBus.loc.map.v[p];
-    const family = this.mapBus.tstables.family[tileid0];
+    const family = this.mapBus.tstables.family?.[tileid0];
     if (!family) return false;
     
     const neiv = this.mapBus.tstables.neighbors;
@@ -99,7 +99,7 @@ export class MapPainter {
       for (let qtileid=0; qtileid<256; qtileid++) { // TODO Lots of iteration! Is it feasible to pre-index by family?
         if (this.mapBus.tstables.family[qtileid] !== family) continue; // wrong family
         if (this.mapBus.tstables.neighbors[qtileid] & ~mask) continue; // expects a neighbor we don't have
-        let weight = this.mapBus.tstables.weight[qtileid] || 0;
+        let weight = this.mapBus.tstables.weight?.[qtileid] || 0;
         if (weight === 0xff) continue; // appointment only
         if (!weight) weight = 0xff; // must be nonzero, and the default zero should be "likeliest"
         const bc = this.popcnt8(this.mapBus.tstables.neighbors[qtileid]);
@@ -117,7 +117,7 @@ export class MapPainter {
         let choice = Math.floor(Math.random() * totalWeight);
         let tileid = tileid0;
         for (let i=0; i<candidates.length; i++) {
-          choice -= this.mapBus.tstables.weight[candidates[i]] || 0xff;
+          choice -= this.mapBus.tstables.weight?.[candidates[i]] || 0xff;
           if (choice < 0) { tileid = candidates[i]; break; }
         }
         candidates[0] = tileid;

@@ -149,6 +149,9 @@ input.toggle + label > span.uibits {
   font-style: italic;
 }
 
+.CommandModal {
+  min-width: 50vw;
+}
 .CommandModal .verbatim {
   background-color: #cfc;
   color: #000;

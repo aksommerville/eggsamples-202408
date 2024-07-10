@@ -131,6 +131,8 @@ extern struct item_metadata {
  * Each definition must be followed by a block comment starting with the field's size.
  */
 #define FLD_bombchest1 1 /* 1 */
+#define FLD_cavegold1 2 /* 1 */
+#define FLD_bow 3 /* 1 */
 int define_stobus_fields();
   
 extern struct globals {

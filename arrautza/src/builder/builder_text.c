@@ -138,7 +138,7 @@ int builder_item_eval(const char *src,int srcc) {
     if ((src[i]>='a')&&(src[i]<='z')) norm[i]=src[i]-0x20;
     else norm[i]=src[i];
   }
-  #define _(tag) if ((srcc==sizeof(#tag)-1)&&!memcmp(src,norm,srcc)) return ITEM_##tag;
+  #define _(tag) if ((srcc==sizeof(#tag)-1)&&!memcmp(#tag,norm,srcc)) return ITEM_##tag;
   ITEM_FOR_EACH
   #undef _
   return -1;

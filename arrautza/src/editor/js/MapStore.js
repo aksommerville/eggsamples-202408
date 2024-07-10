@@ -268,10 +268,10 @@ export class MapStore {
         home.map.removeCommands(homek);
       }
     };
-    if (x > 0) chk(-1, "neighborw", "neighbore");
-    if (y > 0) chk(-plane.w, "neighborn", "neighbors");
-    if (x < plane.w - 1) chk(1, "neighbore", "neighborw");
-    if (y < plane.h - 1) chk(plane.w, "neighbors", "neighborn");
+    if (x > plane.x) chk(-1, "neighborw", "neighbore");
+    if (y > plane.y) chk(-plane.w, "neighborn", "neighbors");
+    if (x < plane.x + plane.w - 1) chk(1, "neighbore", "neighborw");
+    if (y < plane.x + plane.h - 1) chk(plane.w, "neighbors", "neighborn");
   }
   
   /* Grow a plane in place.

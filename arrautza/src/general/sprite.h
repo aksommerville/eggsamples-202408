@@ -114,8 +114,9 @@ struct sprctl {
   /* Notification of a resolved sprite collision, for solid sprites only.
    * (dir) is a cardinal direction, which edge of (sprite) the collision occurred on.
    * We do not report collisions against the map. Examine (phconstrain) if you're interested in those.
+   * (physics) is bitfields, 1<<tilesheet.physics, only relevant when (other) null.
    */
-  void (*collision)(struct sprite *sprite,struct sprite *other,uint8_t dir);
+  void (*collision)(struct sprite *sprite,struct sprite *other,uint8_t dir,int physics);
   
   /* Notification of hero overlap.
    * If you're in SPRGRP_HERONOTIFY, this will be called for each frame that the hero overlaps you, by hitbox.
