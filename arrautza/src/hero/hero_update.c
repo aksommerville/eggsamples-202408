@@ -49,6 +49,12 @@ static void hero_end_motion(struct sprite *sprite,int dx,int dy) {
  
 void hero_update(struct sprite *sprite,double elapsed) {
 
+  if (SPRITE->hurtclock>0.0) {
+    if ((SPRITE->hurtclock-=elapsed)<=0.0) {
+      SPRITE->hurtclock=0.0;
+    }
+  }
+
   if (SPRITE->pushsprite&&!SPRITE->pushsprite_again) {
     SPRITE->pushsprite=0;
   } else if (SPRITE->pushsprite) {

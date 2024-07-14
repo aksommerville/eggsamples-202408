@@ -35,6 +35,7 @@ const struct sprctl sprctl_hero={
     (1<<SPRGRP_HERO)|
     (1<<SPRGRP_FOOTING)|
     (1<<SPRGRP_SOLID)|
+    (1<<SPRGRP_FRAGILE)|
   0),
   .del=_hero_del,
   .init=_hero_init,
@@ -43,4 +44,5 @@ const struct sprctl sprctl_hero={
   .calculate_bounds=hero_calculate_bounds,
   .footing=hero_footing,
   .collision=hero_collision,
+  .damage=hero_damage,
 };

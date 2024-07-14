@@ -59,3 +59,16 @@ void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir,int p
     }
   }
 }
+
+/* Damage.
+ */
+ 
+void hero_damage(struct sprite *sprite,int qual,struct sprite *assailant) {
+  egg_log("%s",__func__);
+  if (SPRITE->hurtclock>0.0) return;
+  SPRITE->hurtclock=HERO_HURT_TIME;
+  g.hp-=1; // TODO damage per qualifier?
+  if (g.hp<1) {
+    game_over();
+  }
+}

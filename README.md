@@ -91,7 +91,7 @@ Expect that cost to scale with the size of the framebuffer.
 - - [ ] Cutscenes
 - - [ ] Hazards
 - - [ ] Combat
-- - - [ ] Sword
+- - - [ ] Sword.
 - - - [ ] Bow
 - - - [ ] Shield
 - - [ ] Misc sprite controllers
@@ -103,6 +103,7 @@ Expect that cost to scale with the size of the framebuffer.
 - - [x] Defer map load
 - - [x] Index doors on map load
 - - [ ] Possible to enter some invalid state and get stuck, by walking NE thru two transitions (even after deferred load and transitions).
+- - [ ] Sound effects
 
 ## Game Ideas
 

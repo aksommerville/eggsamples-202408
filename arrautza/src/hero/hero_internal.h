@@ -6,6 +6,7 @@
 #define HERO_WALK_ANIM_TIME 0.150 /* s/frame */
 #define HERO_WALK_SPEED 5.0 /* m/s */
 #define HERO_PUSH_ACTIVATION_TIME 0.200
+#define HERO_HURT_TIME 0.500
 
 struct sprite_hero {
   struct sprite hdr;
@@ -24,6 +25,7 @@ struct sprite_hero {
   int sword_drop_pending;
   double shieldtime;
   int shield_drop_pending;
+  double hurtclock; // Counts down; invincible if nonzero.
 };
 
 #define SPRITE ((struct sprite_hero*)sprite)
@@ -38,6 +40,7 @@ void hero_update(struct sprite *sprite,double elapsed);
 // hero_event.c
 void hero_footing(struct sprite *sprite,int8_t pvcol,int8_t pvrow);
 void hero_collision(struct sprite *sprite,struct sprite *other,uint8_t dir,int physics);
+void hero_damage(struct sprite *sprite,int qual,struct sprite *assailant);
 
 // hero_item.c
 void hero_item_begin(struct sprite *sprite,uint8_t itemid,int slot); // slot is (0,1)=(a,b)

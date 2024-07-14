@@ -386,3 +386,11 @@ void update_compass(double elapsed) {
   g.compassangle+=rate*elapsed;
   if (g.compassangle>M_PI) g.compassangle-=M_PI*2.0;
 }
+
+/* Game over. (defer until stack depletes)
+ */
+ 
+void game_over() {
+  egg_log("%s:%d:%s",__FILE__,__LINE__,__func__);
+  g.game_over=1;
+}

@@ -122,6 +122,11 @@ struct sprctl {
    * If you're in SPRGRP_HERONOTIFY, this will be called for each frame that the hero overlaps you, by hitbox.
    */
   void (*heronotify)(struct sprite *sprite,struct sprite *hero);
+  
+  /* Receive damage, for sprites in SPRGRP_FRAGILE.
+   * (assailant) may be null.
+   */
+  void (*damage)(struct sprite *sprite,int qual,struct sprite *assailant);
 };
 
 const struct sprctl *sprctl_by_id(int id);
@@ -201,6 +206,7 @@ extern struct sprgrp sprgrpv[32];
 #define SPRGRP_FOOTING     5 /* Receive notifications when I move to a new cell. */
 #define SPRGRP_SOLID       6 /* Automatically prevent collisions against the grid and other solid sprites. */
 #define SPRGRP_HERONOTIFY  7 /* Receive notifications when hero overlaps. Should not be in SOLID. */
+#define SPRGRP_FRAGILE     8
 #define SPRGRP_FOR_EACH \
   _(KEEPALIVE) \
   _(DEATHROW) \
@@ -209,7 +215,8 @@ extern struct sprgrp sprgrpv[32];
   _(HERO) \
   _(FOOTING) \
   _(SOLID) \
-  _(HERONOTIFY)
+  _(HERONOTIFY) \
+  _(FRAGILE)
   
 static inline struct sprite *sprite_if_alive(struct sprite *sprite) {
   return sprgrp_has(sprgrpv+SPRGRP_KEEPALIVE,sprite)?sprite:0;
@@ -225,6 +232,9 @@ void sprgrp_render(int dsttexid,struct sprgrp *sprgrp);
  */
 void physics_update(struct sprgrp *sprgrp,double elapsed);
 void physics_rebuild_map();
+
+// Nonzero if a collision exists against any member of (sprgrp), except (sprite) itself.
+int sprite_collides_with_group(struct sprite *sprite,struct sprgrp *sprgrp);
 
 /* Public API for specific sprite types.
  * These must check type at entry of each function.

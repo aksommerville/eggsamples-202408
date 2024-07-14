@@ -326,3 +326,23 @@ void physics_update(struct sprgrp *sprgrp,double elapsed) {
   physics_resolve_sprites(sprgrp);
   physics_finalize(sprgrp);
 }
+
+/* One-off collision test.
+ */
+ 
+int sprite_collides_with_group(struct sprite *sprite,struct sprgrp *sprgrp) {
+  if (!sprite||!sprgrp) return 0;
+  physics_refresh_aabb(sprite);
+  int i=sprgrp->sprc;
+  while (i-->0) {
+    struct sprite *other=sprgrp->sprv[i];
+    if (other==sprite) continue;
+    physics_refresh_aabb(other);
+    if (sprite->aabb.r<=other->aabb.l) continue;
+    if (sprite->aabb.l>=other->aabb.r) continue;
+    if (sprite->aabb.b<=other->aabb.t) continue;
+    if (sprite->aabb.t>=other->aabb.b) continue;
+    return 1;
+  }
+  return 0;
+}

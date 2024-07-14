@@ -43,10 +43,10 @@ static void hero_render_sword(struct sprite *sprite) {
   uint8_t headtileid,bodytileid,xform=0,swordxform;
   int swordx=x,swordy=y;
   switch (SPRITE->facedir) {
-    case DIR_N: swordy-=16; headtileid=0x11; bodytileid=0x21; swordxform=EGG_XFORM_YREV; break;
+    case DIR_N: swordy-=16; headtileid=0x11; bodytileid=0x21; swordxform=EGG_XFORM_YREV|EGG_XFORM_XREV; break;
     case DIR_S: swordy+=10; headtileid=0x10; bodytileid=0x20; swordxform=0; break;
     case DIR_W: swordx-=12; swordy-=2; headtileid=0x12; bodytileid=0x22; swordxform=EGG_XFORM_SWAP|EGG_XFORM_YREV; break;
-    case DIR_E: swordx+=12; swordy-=2; headtileid=0x12; bodytileid=0x22; xform=EGG_XFORM_XREV; swordxform=EGG_XFORM_SWAP; break;
+    case DIR_E: swordx+=12; swordy-=2; headtileid=0x12; bodytileid=0x22; xform=EGG_XFORM_XREV; swordxform=EGG_XFORM_SWAP|EGG_XFORM_XREV; break;
   }
   tile_renderer_tile(&g.tile_renderer,swordx,swordy,0x30,swordxform);
   if (SPRITE->facedir==DIR_N) {
@@ -55,6 +55,18 @@ static void hero_render_sword(struct sprite *sprite) {
   } else {
     tile_renderer_tile(&g.tile_renderer,x,y,bodytileid,xform);
     tile_renderer_tile(&g.tile_renderer,x,heady,headtileid,xform);
+  }
+  // 4-frame swash to create an illusion of having been swung from the right.
+  int swashframe=(int)((SPRITE->swordtime*4.0)/0.120);
+  if (swashframe<4) {
+    int swashx=swordx,swashy=swordy;
+    switch (SPRITE->facedir) {
+      case DIR_N: swashx+=10; swashy+=4; break;
+      case DIR_S: swashx-=10; swashy-=4; break;
+      case DIR_W: swashy-=10; swashx+=4; break;
+      case DIR_E: swashy+=10; swashx-=4; break;
+    }
+    tile_renderer_tile(&g.tile_renderer,swashx,swashy,0x31+swashframe,swordxform);
   }
 }
 
@@ -85,8 +97,14 @@ void hero_render(int dsttexid,struct sprite *sprite) {
   if (texid<1) return;
   
   uint8_t alpha=0xff;
+  uint32_t tint=0;
   if (hero_item_in_use(sprite,ITEM_CLOAK)) alpha=0x40;
-  tile_renderer_begin(&g.tile_renderer,texid,0,alpha);
+  if (SPRITE->hurtclock>0.0) {
+    int frame=(int)(SPRITE->hurtclock*12.000);
+    if (frame&1) tint=0xff000080;
+    else tint=0xffffff80;
+  }
+  tile_renderer_begin(&g.tile_renderer,texid,tint,alpha);
   
   // Sword is highly significant so it gets priority.
   if (hero_item_in_use(sprite,ITEM_SWORD)) {

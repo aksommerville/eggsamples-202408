@@ -31,6 +31,8 @@ static void hello_begin_game(struct menu *menu) {
   menu_pop_soon(menu);
   sprgrp_kill(sprgrpv+SPRGRP_HERO);
   g.mapid=0;
+  g.game_over=0;
+  //TODO Ensure clean start. This oughtn't be the hello menu's problem.
   if ((load_map(RID_map_start,-1,-1,TRANSITION_NONE)<0)||(check_map_change()<0)) {
     egg_log("Failed to load initial map.");
     egg_request_termination();

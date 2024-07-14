@@ -84,6 +84,9 @@ extern const struct sprctl sprctl_animate_once;
 extern const struct sprctl sprctl_chest;
 extern const struct sprctl sprctl_blinktoast;
 extern const struct sprctl sprctl_pushtrigger;
+extern const struct sprctl sprctl_missile;
+extern const struct sprctl sprctl_bomb;
+extern const struct sprctl sprctl_explosion;
 
 #define TRANSITION_NONE        0
 #define TRANSITION_PAN_LEFT    1 /* Pans are named for the direction of the camera's or hero's movement. */
@@ -183,6 +186,7 @@ extern struct globals {
   uint8_t itemqual[1+ITEM_COUNT];
   uint8_t hp,hpmax;
   double compassangle;
+  int game_over;
 } g;
 
 /* These do not load the map immediately.
@@ -205,5 +209,8 @@ int item_possessed(int itemid);
 void acquire_item(int itemid,int count);
 
 void update_compass(double elapsed);
+
+// Hero calls this when he dies.
+void game_over();
   
 #endif

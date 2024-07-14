@@ -25,6 +25,7 @@ static void hero_sword_begin(struct sprite *sprite,int slot) {
   if (hero_item_in_use(sprite,ITEM_SHIELD)) return;
   if (hero_item_in_use(sprite,ITEM_CLOAK)) return;
   //TODO Check for impulse actions that only happen when the sword is first drawn.
+  // The initial check applies across a quarter-turn arc from the hero's right side to front.
   //TODO Sound effect.
   SPRITE->swordtime=0.0;
   SPRITE->sword_drop_pending=0;
@@ -46,7 +47,7 @@ static void hero_sword_update(struct sprite *sprite,double elapsed) {
   } else if (SPRITE->sword_drop_pending&&(SPRITE->swordtime>=SWORD_TIME_MIN)) {
     unsetitem(sprite,ITEM_SWORD);
   } else {
-    //TODO Check for damage to others.
+    //TODO Check for damage to others. At this point, the sword is stationary, only facing front.
   }
 }
 
@@ -91,8 +92,10 @@ static int hero_bow_valid(struct sprite *sprite) {
 static void hero_bow_begin(struct sprite *sprite,int slot) {
   if (hero_bow_valid(sprite)) {
     g.itemqual[ITEM_BOW]--;
-    egg_log("%s TODO %s:%d",__func__,__FILE__,__LINE__);
-    //TODO Spawn arrow.
+    uint8_t argv[]={SPRITE->facedir,15,TILESIZE>>1};
+    struct sprite *arrow=sprite_spawn_resless(&sprctl_missile,RID_image_hero,0x35,sprite->x,sprite->y,argv,sizeof(argv));
+    if (arrow) {
+    }
   } else {
     //TODO Reject sound.
   }
@@ -110,8 +113,9 @@ static int hero_bomb_valid(struct sprite *sprite) {
 static void hero_bomb_begin(struct sprite *sprite,int slot) {
   if (hero_bomb_valid(sprite)) {
     g.itemqual[ITEM_BOMB]--;
-    egg_log("%s TODO %s:%d",__func__,__FILE__,__LINE__);
-    //TODO Spawn bomb.
+    struct sprite *bomb=sprite_spawn_resless(&sprctl_bomb,RID_image_hero,0x36,sprite->x,sprite->y,0,0);
+    if (bomb) {
+    }
   } else {
     //TODO Reject sound.
   }

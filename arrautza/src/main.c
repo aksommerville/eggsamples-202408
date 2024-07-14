@@ -179,6 +179,10 @@ void egg_client_update(double elapsed) {
     }
     reap_defunct_menus();
     sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed,1);
+    
+  // If the game_over flag is set, reopen the hello menu. TODO proper "game over" menu.
+  } else if (g.game_over) {
+    menu_push_hello();
   
   // No menu, normal game update.
   } else {
