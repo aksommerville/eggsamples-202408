@@ -327,7 +327,7 @@ void physics_update(struct sprgrp *sprgrp,double elapsed) {
   physics_finalize(sprgrp);
 }
 
-/* One-off collision test.
+/* One-off sprite collision test.
  */
  
 int sprite_collides_with_group(struct sprite *sprite,struct sprgrp *sprgrp) {
@@ -342,6 +342,26 @@ int sprite_collides_with_group(struct sprite *sprite,struct sprgrp *sprgrp) {
     if (sprite->aabb.l>=other->aabb.r) continue;
     if (sprite->aabb.b<=other->aabb.t) continue;
     if (sprite->aabb.t>=other->aabb.b) continue;
+    return 1;
+  }
+  return 0;
+}
+
+/* One-off map collision test.
+ */
+ 
+int sprite_collides_with_map(struct sprite *sprite,int physics) {
+  if (!sprite) return 0;
+  physics=1<<physics;
+  physics_refresh_aabb(sprite);
+  const struct wall *wall=physics_wallv;
+  int i=physics_wallc;
+  for (;i-->0;wall++) {
+    if (!(wall->physics&physics)) continue;
+    if (sprite->aabb.r<=wall->aabb.l) continue;
+    if (sprite->aabb.l>=wall->aabb.r) continue;
+    if (sprite->aabb.b<=wall->aabb.t) continue;
+    if (sprite->aabb.t>=wall->aabb.b) continue;
     return 1;
   }
   return 0;

@@ -73,7 +73,6 @@ Expect that cost to scale with the size of the framebuffer.
 - [ ] Make a separate "eggzotics" repo for projects that target Egg in addition to some highly-constrained native platform (Playdate, TinyArcade, ...)
 - [ ] Wizard for copying a project.
 - [ ] arrautza
-- - [x] Sprite collisions
 - - [ ] Sprite editor
 - - - [ ] image
 - - - [ ] tileid
@@ -85,9 +84,7 @@ Expect that cost to scale with the size of the framebuffer.
 - - [ ] Map editor: What could we do to provide metadata labels for sprite args, per sprctl?
 - - [ ] Map editor: Observed a neighbor failing to get created (11=>12 but i forget the circumstances).
 - - [ ] Tilesheet editor: Shift-drag writing over transparent cells does not erase them
-- - [x] Global state store
 - - [ ] Persistence
-- - [x] Dialogue
 - - [ ] Cutscenes
 - - [ ] Hazards
 - - [ ] Combat
@@ -99,15 +96,9 @@ Expect that cost to scale with the size of the framebuffer.
 - - - [ ] Treadle
 - - - [ ] Animate forever, animate once
 - - [ ] Monsters
-- - [x] Neighbor transitions
-- - [x] Defer map load
-- - [x] Index doors on map load
-- - [x] Possible to enter some invalid state and get stuck, by walking NE thru two transitions (even after deferred load and transitions).
-- - - Because we corrected hero position on the wrong axis:
-- - - - GAME: hero_update 19,0 19.943346738,0.004218339
-- - - - GAME: loaded map 3, ucoord=1,1
-- - - - GAME: hero_update 20,10 20.027593135,10.919971942 <-- should have dropped x but instead upped y
 - - [ ] Sound effects
+- - [ ] Door turnaround. (enter a house and immediately turn back, you should trigger the door despite not changing cells)
+- - [ ] sprctl_missile: Option for a "replacement sprite" to spawn on collisions. If unset, don't check solid collision. For bow and coin.
 
 ## Game Ideas
 

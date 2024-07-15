@@ -58,6 +58,14 @@ static void _missile_update(struct sprite *sprite,double elapsed) {
     sprite_kill_soon(sprite);
     return;
   }
+  if (
+    sprite_collides_with_map(sprite,1)|| //TODO Should have an enum of map physics. 1=SOLID
+    sprite_collides_with_group(sprite,sprgrpv+SPRGRP_SOLID)
+  ) {
+    //TODO Some missiles, eg coins, should spawn a new sprite after colliding.
+    sprite_kill_soon(sprite);
+    return;
+  }
   //TODO Other obstructions and damage.
 }
 

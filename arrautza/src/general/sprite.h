@@ -236,6 +236,9 @@ void physics_rebuild_map();
 // Nonzero if a collision exists against any member of (sprgrp), except (sprite) itself.
 int sprite_collides_with_group(struct sprite *sprite,struct sprgrp *sprgrp);
 
+// Nonzero if (sprite)'s hitbox overlaps any cell with (physics) type.
+int sprite_collides_with_map(struct sprite *sprite,int physics);
+
 /* Public API for specific sprite types.
  * These must check type at entry of each function.
  ******************************************************************************/

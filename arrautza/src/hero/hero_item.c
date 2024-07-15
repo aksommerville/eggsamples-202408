@@ -92,9 +92,14 @@ static int hero_bow_valid(struct sprite *sprite) {
 static void hero_bow_begin(struct sprite *sprite,int slot) {
   if (hero_bow_valid(sprite)) {
     g.itemqual[ITEM_BOW]--;
-    uint8_t argv[]={SPRITE->facedir,15,TILESIZE>>1};
+    uint8_t argv[]={SPRITE->facedir,15,TILESIZE};
     struct sprite *arrow=sprite_spawn_resless(&sprctl_missile,RID_image_hero,0x35,sprite->x,sprite->y,argv,sizeof(argv));
     if (arrow) {
+      if ((SPRITE->facedir==DIR_W)||(SPRITE->facedir==DIR_E)) {
+        sprite_set_hitbox(arrow,0.75,0.125,0.0,0.0);
+      } else {
+        sprite_set_hitbox(arrow,0.125,0.75,0.0,0.0);
+      }
     }
   } else {
     //TODO Reject sound.
@@ -173,8 +178,11 @@ static int hero_gold_valid(struct sprite *sprite) {
 static void hero_gold_begin(struct sprite *sprite,int slot) {
   if (hero_gold_valid(sprite)) {
     g.itemqual[ITEM_GOLD]--;
-    egg_log("%s TODO %s:%d",__func__,__FILE__,__LINE__);
-    //TODO Spawn gold.
+    uint8_t argv[]={SPRITE->facedir,10,TILESIZE};
+    struct sprite *coin=sprite_spawn_resless(&sprctl_missile,RID_image_hero,0x43,sprite->x,sprite->y,argv,sizeof(argv));
+    if (coin) {
+      sprite_set_hitbox(coin,0.250,0.250,0.0,0.0);
+    }
     //TODO If there's a receptacle directly in front of us, should we skip spawning?
   } else {
     //TODO Reject sound.
