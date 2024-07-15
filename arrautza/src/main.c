@@ -117,33 +117,16 @@ int egg_client_init() {
   sprgrpv_init();
   srand_auto();
   
-  /*XXX Start with a bunch of items.
-  g.aitem=ITEM_SWORD;
-  g.bitem=ITEM_CLOAK;
-  g.inventory[0]=ITEM_SHIELD;
-  g.inventory[1]=ITEM_BOMB;
-  g.inventory[2]=ITEM_BOW;
-  g.inventory[3]=ITEM_RAFT;
-  g.inventory[4]=ITEM_STOPWATCH;
-  g.inventory[5]=ITEM_COMPASS;
-  g.inventory[6]=ITEM_HAMMER;
-  g.inventory[7]=ITEM_GOLD;
-  g.itemqual[ITEM_SWORD]=3;
-  g.itemqual[ITEM_SHIELD]=1;
-  g.itemqual[ITEM_BOMB]=11;
-  g.itemqual[ITEM_GOLD]=22;
-  g.itemqual[ITEM_BOW]=0;
-  /**/
-  
-  g.hp=g.hpmax=5;
-  g.hp=3;
   if (define_stobus_fields()<0) return -1;
   stobus_listen(&g.stobus,FLD_dialogue,cb_dialogue,0);
-  g.ucoordx=g.ucoordy=0;
   
   if (1) { // XXX During development I prefer to skip the main menu.
-    load_map(RID_map_start,-1,-1,TRANSITION_NONE);
-    check_map_change();
+    if (reset_game()<0) {
+      egg_log("reset_game failed!");
+      return -1;
+    }
+    //load_map(RID_map_start,-1,-1,TRANSITION_NONE);
+    //check_map_change();
   } else { // Normal startup: Hello menu
     if (!menu_push_hello()) {
       egg_log("Failed to initialize main menu!");
@@ -180,8 +163,10 @@ void egg_client_update(double elapsed) {
     reap_defunct_menus();
     sprgrp_update(sprgrpv+SPRGRP_UPDATE,elapsed,1);
     
-  // If the game_over flag is set, reopen the hello menu. TODO proper "game over" menu.
+  // If the game_over flag is set, reopen the hello menu.
   } else if (g.game_over) {
+    //TODO Denouement period where game stays visible. Just a few seconds.
+    //TODO Proper "game over" menu.
     menu_push_hello();
   
   // No menu, normal game update.

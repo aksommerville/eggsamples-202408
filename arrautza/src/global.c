@@ -165,10 +165,12 @@ static int apply_map_change(uint16_t mapid,int dstx,int dsty,int transition) {
       hero->y=dsty+0.5;
     } else {
       // Normally on a map change, the hero is OOB in one direction. Find that direction and slide him one screenful.
-      if (hero->x<0.0) hero->x+=COLC;
-      else if (hero->y<0.0) hero->y+=ROWC;
-      else if (hero->x>=COLC) hero->x-=COLC;
-      else if (hero->y>=ROWC) hero->y-=ROWC;
+      switch (g.mapnext.transition) { // Should still be set from load_neighbor().
+        case TRANSITION_PAN_LEFT: if (hero->x<0.0) hero->x+=COLC; break;
+        case TRANSITION_PAN_RIGHT: if (hero->x>=COLC) hero->x-=COLC; break;
+        case TRANSITION_PAN_UP: if (hero->y<0.0) hero->y+=ROWC; break;
+        case TRANSITION_PAN_DOWN: if (hero->y>=ROWC) hero->y-=ROWC; break;
+      }
     }
   }
   sprite_warped(hero);
@@ -212,6 +214,31 @@ int load_neighbor(uint8_t mapcmd) {
     case MAPCMD_neighbors: g.ucoordy++; transition=TRANSITION_PAN_DOWN; break;
   }
   return load_map(mapid,-1,-1,transition);
+}
+
+/* Reset.
+ */
+ 
+int reset_game() {
+  sprgrp_kill(sprgrpv+SPRGRP_HERO);
+  stobus_clear_hard(&g.stobus);
+  
+  g.mapid=0;
+  g.game_over=0;
+  g.mapnext.mapid=0;
+  g.ucoordx=0;
+  g.ucoordy=0;
+  g.menu_pause_selection=0;
+  g.transclock=0.0;
+  g.transition=0;
+  memset(g.inventory,0,sizeof(g.inventory));
+  g.aitem=0;
+  g.bitem=0;
+  memset(g.itemqual,0,sizeof(g.itemqual));
+  g.hp=g.hpmax=5;
+  
+  if ((load_map(RID_map_start,-1,-1,TRANSITION_NONE)<0)||(check_map_change()<0)) return -1;
+  return 0;
 }
 
 /* Render map.
@@ -391,6 +418,5 @@ void update_compass(double elapsed) {
  */
  
 void game_over() {
-  egg_log("%s:%d:%s",__FILE__,__LINE__,__func__);
   g.game_over=1;
 }

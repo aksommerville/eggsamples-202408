@@ -28,15 +28,12 @@ static void _hello_del(struct menu *menu) {
  */
  
 static void hello_begin_game(struct menu *menu) {
-  menu_pop_soon(menu);
-  sprgrp_kill(sprgrpv+SPRGRP_HERO);
-  g.mapid=0;
-  g.game_over=0;
-  //TODO Ensure clean start. This oughtn't be the hello menu's problem.
-  if ((load_map(RID_map_start,-1,-1,TRANSITION_NONE)<0)||(check_map_change()<0)) {
-    egg_log("Failed to load initial map.");
+  if (reset_game()<0) {
+    egg_log("reset_game failed!");
     egg_request_termination();
+    return;
   }
+  menu_pop_soon(menu);
 }
 
 /* Continue.
@@ -150,6 +147,7 @@ struct menu *menu_push_hello() {
   menu->id=MENU_ID_HELLO;
   menu->opaque=1;
   MENU->pvinput=g.instate;
+  MENU->optionp=0; // New Game. TODO Start on Continue if applicable.
   
   if (egg_texture_load_image(MENU->texid=egg_texture_new(),0,RID_image_logo)<0) {
     menu_pop(menu);

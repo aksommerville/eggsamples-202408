@@ -212,6 +212,15 @@ int stobus_decode(struct stobus *stobus,const char *src,int srcc) {
   return 0;
 }
 
+/* Clear hard.
+ */
+ 
+void stobus_clear_hard(struct stobus *stobus) {
+  struct stobus_field *field=stobus->fieldv;
+  int i=stobus->fieldc;
+  for (;i-->0;field++) field->v=0;
+}
+
 /* Field list.
  */
 

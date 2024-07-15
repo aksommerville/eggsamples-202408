@@ -212,5 +212,8 @@ void update_compass(double elapsed);
 
 // Hero calls this when he dies.
 void game_over();
+
+// Hello menu calls this as it dismisses. Clears globals and loads the first map.
+int reset_game();
   
 #endif

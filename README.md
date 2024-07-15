@@ -102,7 +102,11 @@ Expect that cost to scale with the size of the framebuffer.
 - - [x] Neighbor transitions
 - - [x] Defer map load
 - - [x] Index doors on map load
-- - [ ] Possible to enter some invalid state and get stuck, by walking NE thru two transitions (even after deferred load and transitions).
+- - [x] Possible to enter some invalid state and get stuck, by walking NE thru two transitions (even after deferred load and transitions).
+- - - Because we corrected hero position on the wrong axis:
+- - - - GAME: hero_update 19,0 19.943346738,0.004218339
+- - - - GAME: loaded map 3, ucoord=1,1
+- - - - GAME: hero_update 20,10 20.027593135,10.919971942 <-- should have dropped x but instead upped y
 - - [ ] Sound effects
 
 ## Game Ideas

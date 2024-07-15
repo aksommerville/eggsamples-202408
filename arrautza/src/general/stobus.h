@@ -43,6 +43,10 @@ void stobus_set(struct stobus *stobus,int id,int v);
 int stobus_encode(char *dst,int dsta,const struct stobus *stobus);
 int stobus_decode(struct stobus *stobus,const char *src,int srcc);
 
+/* Reset all state to zero and do not fire any notifications.
+ */
+void stobus_clear_hard(struct stobus *stobus);
+
 /* Private-ish.
  **********************************************************************/
 
