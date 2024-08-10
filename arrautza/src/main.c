@@ -62,6 +62,7 @@ static void cb_joy(int plrid,int btnid,int value,int state,void *userdata) {
     g.instate=state;
     switch (btnid) {
       case INKEEP_BTNID_AUX1: if (value) toggle_pause(); break;
+      case INKEEP_BTNID_RP: case INKEEP_BTNID_R2: if (value) egg_request_termination(); break;
     }
   }
 }
@@ -120,7 +121,7 @@ int egg_client_init() {
   if (define_stobus_fields()<0) return -1;
   stobus_listen(&g.stobus,FLD_dialogue,cb_dialogue,0);
   
-  if (1) { // XXX During development I prefer to skip the main menu.
+  if (0) { // XXX During development I prefer to skip the main menu.
     if (reset_game()<0) {
       egg_log("reset_game failed!");
       return -1;

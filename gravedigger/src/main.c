@@ -187,6 +187,8 @@ static void on_key(int keycode,int value) {
 }
 
 static void on_joy(int btnid,int value) {
+  if (value&&(btnid==EGG_JOYBTN_RP)) { egg_request_termination(); return; }
+  if (value&&(btnid==EGG_JOYBTN_R2)) { egg_request_termination(); return; }
   if (g.dayclock>0.0) switch (btnid) {
     case EGG_JOYBTN_LEFT: if (value) hero_walk_begin(&g.hero,-1); else if (g.hero.dx<0) hero_walk_end(&g.hero); break;
     case EGG_JOYBTN_RIGHT: if (value) hero_walk_begin(&g.hero,1); else if (g.hero.dx>0) hero_walk_end(&g.hero); break;
