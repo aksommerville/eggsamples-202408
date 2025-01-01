@@ -1,4 +1,10 @@
-# Eggsamples
+# Eggsamples 202408
+
+*DEPRECATED*
+
+These sample programs are associated with egg-202408, an early attempt that works but is somewhat incomplete and not being maintained.
+
+The new eggsamples are at https://github.com/aksommerville/eggsamples, and Egg is at https://github.com/aksommerville/egg
 
 Games for Egg that you can use as a starting point or reference.
 
@@ -7,7 +13,7 @@ Except `stdlib/math.c`, copied from newlib (https://sourceware.org/git/newlib-cy
 
 ## How to Build
 
-- Clone and build Egg [https://github.com/aksommerville/egg].
+- Clone and build Egg [https://github.com/aksommerville/egg-202408].
 - Update eggsamples/Makefile with the location of Egg and your WebAssembly compiler.
 - Get WABT for the WAT demo: https://github.com/WebAssembly/wabt or `sudo apt install wabt`
 - Finally, from the top of this repo, just: `make`
